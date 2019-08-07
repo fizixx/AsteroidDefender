@@ -1,32 +1,95 @@
-// Copyright (c) 2015, Tiaan Louw
-//
-// Permission to use, copy, modify, and/or distribute this software for any
-// purpose with or without fee is hereby granted, provided that the above
-// copyright notice and this permission notice appear in all copies.
-//
-// THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
-// REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
-// AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
-// INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
-// LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
-// OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
-// PERFORMANCE OF THIS SOFTWARE.
+#include "SpriteConverter.h"
+#include "SpriteRenderer.h"
+#include "World.h"
 
-#include "canvas/app.h"
-#include "canvas/rendering/canvas.h"
+#include "canvas/App.h"
+#include "elastic/Context.h"
+#include "elastic/Views/LabelView.h"
+#include "hive/PhysicalResourceLocator.h"
+#include "hive/ResourceManager.h"
+#include "nucleus/Streams/FileInputStream.h"
 
 class AsteroidDefender : public ca::WindowDelegate {
 public:
-  AsteroidDefender() = default;
+  AsteroidDefender() : ca::WindowDelegate{"Asteroid Defender"} {}
   ~AsteroidDefender() override = default;
 
   // Override: ca::WindowDelegate
-  void onPaint(ca::Canvas* canvas) override {
-    canvas->clear(ca::Color{0, 0, 0, 255});
+
+  bool onWindowCreated(ca::Window* window) override {
+    if (!WindowDelegate::onWindowCreated(window)) {
+      return false;
+    }
+
+    ca::Renderer* renderer = window->getRenderer();
+
+    auto assetsPath = nu::getCurrentWorkingDirectory() / "assets";
+    m_physicalFileResourceLocator.setRootPath(assetsPath);
+    m_resourceManager.addResourceLocatorBack(&m_physicalFileResourceLocator);
+
+    m_spriteConverter.setRenderer(renderer);
+    m_resourceManager.registerConverter(&m_spriteConverter);
+
+    if (!m_ui.initialize(renderer)) {
+      return false;
+    }
+
+    nu::FileInputStream fontStream{nu::FilePath{R"(C:\Windows\Fonts\Arial.ttf)"}};
+    m_font.load(&fontStream, renderer, 20);
+
+    if (!createUI(&m_ui, &m_font)) {
+      return false;
+    }
+
+    if (!m_spriteRenderer.initialize(renderer)) {
+      return false;
+    }
+
+    if (!m_world.initialize(renderer, &m_resourceManager)) {
+      return false;
+    }
+
+    return true;
+  }
+
+  void onWindowResized(const ca::Size& size) override {
+    WindowDelegate::onWindowResized(size);
+
+    m_spriteRenderer.resize(size);
+    m_ui.resize(size);
+  }
+
+  void onMouseMoved(const ca::MouseEvent& evt) override {
+    m_world.setCursorPosition(evt.pos);
+  }
+
+  void tick(F32 delta) override {
+    m_spriteRenderer.tick(delta);
+  }
+
+  void onRender(ca::Renderer* renderer) override {
+    m_world.render(&m_spriteRenderer);
+    m_ui.render(renderer);
   }
 
 private:
-  DISALLOW_COPY_AND_ASSIGN(AsteroidDefender);
+  DELETE_COPY_AND_MOVE(AsteroidDefender);
+
+  static bool createUI(el::Context* context, el::Font* font) {
+    auto lv = new el::LabelView{context, "Asteroid Defender", font};
+    context->getRootView()->addChild(lv);
+
+    return true;
+  }
+
+  hi::ResourceManager m_resourceManager;
+  hi::PhysicalFileResourceLocator m_physicalFileResourceLocator;
+  SpriteConverter m_spriteConverter;
+
+  el::Font m_font;
+  el::Context m_ui;
+  SpriteRenderer m_spriteRenderer;
+  World m_world;
 };
 
 CANVAS_APP(AsteroidDefender);
