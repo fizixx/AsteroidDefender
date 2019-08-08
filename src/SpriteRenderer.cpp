@@ -111,8 +111,12 @@ void SpriteRenderer::resize(const ca::Size& size) {
   F32 halfWidth = static_cast<F32>(size.width) / 2.0f;
   F32 halfHeight = static_cast<F32>(size.height) / 2.0f;
 
+#if 0
   m_projection =
       ca::orthographicProjection(-halfWidth, halfWidth, -halfHeight, halfHeight, -1.0f, 1.0f);
+#else
+  m_projection = ca::perspectiveProjection(60.0f, halfWidth / halfHeight, 0.1f, 1000.0f);
+#endif
 }
 
 ca::Vec2 SpriteRenderer::convertDeviceCoordinatesToWorldCoordinates(ca::Pos pos) {
@@ -127,6 +131,8 @@ void SpriteRenderer::beginFrame(Camera* camera) {
 }
 
 void SpriteRenderer::renderSprite(Sprite* sprite, const ca::Vec2& position, F32 scale) {
+  // m_view = ca::translationMatrix({0.0f, 0.f, -100.0f});
+
   ca::Mat4 model = ca::translationMatrix(ca::Vec3{position, 0.0f}) * ca::scaleMatrix(scale);
   ca::Mat4 mvp = m_projection * m_view * model;
 

@@ -6,6 +6,7 @@
 
 struct Camera {
   ca::Vec2 position{0.0f, 0.0f};
+  F32 zoom = 100.0f;
 
   ca::Mat4 calculateViewMatrix();
 };

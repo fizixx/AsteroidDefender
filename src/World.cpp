@@ -36,6 +36,41 @@ bool World::initialize(ca::Renderer* renderer, hi::ResourceManager* resourceMana
   return true;
 }
 
+void World::onMouseMoved(const ca::MouseEvent& evt) {
+  setCursorPosition(evt.pos);
+}
+
+bool World::onMousePressed(const ca::MouseEvent& evt) {
+  return false;
+}
+
+void World::onMouseReleased(const ca::MouseEvent& evt) {}
+
+void World::onMouseWheel(const ca::MouseWheelEvent& evt) {
+   m_camera.zoom += -evt.wheelOffset.y * 10.0f;
+}
+
+void World::onKeyPressed(const ca::KeyEvent& evt) {
+  switch (evt.key) {
+  case ca::Key::A:
+    m_camera.position.x -= 1.0f;
+    break;
+
+  case ca::Key::D:
+    m_camera.position.x += 1.0f;
+    break;
+
+  case ca::Key::W:
+    m_camera.position.y += 1.0f;
+    break;
+
+  case ca::Key::S:
+    m_camera.position.y -= 1.0f;
+  }
+}
+
+void World::onKeyReleased(const ca::KeyEvent& evt) {}
+
 void World::setCursorPosition(const ca::Pos& pos) {
   LOG(Info) << "Cursor position = (" << pos.x << ", " << pos.y << ")";
   m_cursorPosition = pos;
@@ -46,7 +81,7 @@ void World::render(SpriteRenderer* spriteRenderer) {
 
   static F32 pos = 0.0f;
   static F32 delta = 1.0f;
-  pos += delta * 0.1f;
+  // pos += delta * 0.1f;
   if (pos >= 100.0f || pos <= -100.0f) {
     delta *= -1.0f;
   }

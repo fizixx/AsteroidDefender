@@ -5,9 +5,10 @@
 #include "SpriteRenderer.h"
 
 #include "canvas/Renderer/Renderer.h"
+#include "canvas/Windows/Event.h"
+#include "hive/ResourceManager.h"
 #include "nucleus/FilePath.h"
 #include "nucleus/Macros.h"
-#include "hive/ResourceManager.h"
 
 class World {
 public:
@@ -15,6 +16,13 @@ public:
   ~World() = default;
 
   bool initialize(ca::Renderer* renderer, hi::ResourceManager* resourceManager);
+
+  void onMouseMoved(const ca::MouseEvent& evt);
+  bool onMousePressed(const ca::MouseEvent& evt);
+  void onMouseReleased(const ca::MouseEvent& evt);
+  void onMouseWheel(const ca::MouseWheelEvent& evt);
+  void onKeyPressed(const ca::KeyEvent& evt);
+  void onKeyReleased(const ca::KeyEvent& evt);
 
   // Set the cursor position in device coordinates.
   void setCursorPosition(const ca::Pos& pos);

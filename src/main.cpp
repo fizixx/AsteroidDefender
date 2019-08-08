@@ -60,7 +60,27 @@ public:
   }
 
   void onMouseMoved(const ca::MouseEvent& evt) override {
-    m_world.setCursorPosition(evt.pos);
+    m_world.onMouseMoved(evt);
+  }
+
+  bool onMousePressed(const ca::MouseEvent& evt) override {
+    return m_world.onMousePressed(evt);
+  }
+
+  void onMouseReleased(const ca::MouseEvent& evt) override {
+    m_world.onMouseReleased(evt);
+  }
+
+  void onMouseWheel(const ca::MouseWheelEvent& evt) override {
+    m_world.onMouseWheel(evt);
+  }
+
+  void onKeyPressed(const ca::KeyEvent& evt) override {
+    m_world.onKeyPressed(evt);
+  }
+
+  void onKeyReleased(const ca::KeyEvent& evt) override {
+    m_world.onKeyReleased(evt);
   }
 
   void tick(F32 delta) override {
