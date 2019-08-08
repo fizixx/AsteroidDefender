@@ -1,4 +1,4 @@
-#include "SpriteConverter.h"
+#include "ad/Sprites/SpriteConverter.h"
 
 #include "canvas/Renderer/Renderer.h"
 
@@ -10,8 +10,8 @@ void SpriteConverter::setRenderer(ca::Renderer* renderer) {
   m_renderer = renderer;
 }
 
-bool SpriteConverter::load(hi::ResourceManager* resourceManager, nu::InputStream* inputStream,
-                           Sprite* storage) {
+bool SpriteConverter::load(hi::ResourceManager* UNUSED(resourceManager),
+                           nu::InputStream* inputStream, Sprite* storage) {
   ca::Image image;
   if (!image.loadFromStream(inputStream)) {
     return false;

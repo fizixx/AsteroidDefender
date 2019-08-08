@@ -1,7 +1,8 @@
 #ifndef SPRITE_CONVERTER_H_
 #define SPRITE_CONVERTER_H_
 
-#include "Sprite.h"
+#include "ad/Sprites/Sprite.h"
+
 #include "canvas/Utils/Image.h"
 #include "hive/Converter.h"
 

@@ -1,4 +1,5 @@
-#include "SpriteRenderer.h"
+#include "ad/Sprites/SpriteRenderer.h"
+
 #include "canvas/Math/Transform.h"
 #include "nucleus/Streams/WrappedMemoryInputStream.h"
 
@@ -124,7 +125,7 @@ ca::Vec2 SpriteRenderer::convertDeviceCoordinatesToWorldCoordinates(ca::Pos pos)
   return {result.x, result.y};
 }
 
-void SpriteRenderer::tick(F32 delta) {}
+void SpriteRenderer::tick(F32 UNUSED(delta)) {}
 
 void SpriteRenderer::beginFrame(Camera* camera) {
   m_view = camera->calculateViewMatrix();

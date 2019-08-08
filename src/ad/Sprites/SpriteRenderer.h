@@ -1,9 +1,9 @@
 #ifndef SPRITE_RENDERER_H_
 #define SPRITE_RENDERER_H_
 
-#include "Sprite.h"
+#include "ad/Sprites/Sprite.h"
 
-#include "Camera.h"
+#include "ad/World/Camera.h"
 #include "canvas/Renderer/Renderer.h"
 #include "nucleus/Macros.h"
 
@@ -28,8 +28,6 @@ private:
   DELETE_COPY_AND_MOVE(SpriteRenderer);
 
   ca::Renderer* m_renderer = nullptr;
-
-  F32 m_zoom = 0.1f;
 
   ca::Mat4 m_projection = ca::Mat4::identity;
 

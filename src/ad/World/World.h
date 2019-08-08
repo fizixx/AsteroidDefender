@@ -1,8 +1,8 @@
 #ifndef WORLD_H_
 #define WORLD_H_
 
-#include "Camera.h"
-#include "SpriteRenderer.h"
+#include "ad/World/Camera.h"
+#include "ad/Sprites/SpriteRenderer.h"
 
 #include "canvas/Renderer/Renderer.h"
 #include "canvas/Windows/Event.h"
@@ -15,7 +15,7 @@ public:
   World() = default;
   ~World() = default;
 
-  bool initialize(ca::Renderer* renderer, hi::ResourceManager* resourceManager);
+  bool initialize(hi::ResourceManager* resourceManager);
 
   void onMouseMoved(const ca::MouseEvent& evt);
   bool onMousePressed(const ca::MouseEvent& evt);

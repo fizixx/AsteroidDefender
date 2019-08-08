@@ -1,6 +1,6 @@
-#include "SpriteConverter.h"
-#include "SpriteRenderer.h"
-#include "World.h"
+#include "ad/Sprites/SpriteConverter.h"
+#include "ad/Sprites/SpriteRenderer.h"
+#include "ad/World/World.h"
 
 #include "canvas/App.h"
 #include "elastic/Context.h"
@@ -24,6 +24,7 @@ public:
     ca::Renderer* renderer = window->getRenderer();
 
     auto assetsPath = nu::getCurrentWorkingDirectory() / "assets";
+    LOG(Info) << "Assets path: " << assetsPath.getPath();
     m_physicalFileResourceLocator.setRootPath(assetsPath);
     m_resourceManager.addResourceLocatorBack(&m_physicalFileResourceLocator);
 
@@ -34,7 +35,11 @@ public:
       return false;
     }
 
+#if OS(MACOSX)
+    nu::FileInputStream fontStream{nu::FilePath{R"(/Library/Fonts/Arial.ttf)"}};
+#else
     nu::FileInputStream fontStream{nu::FilePath{R"(C:\Windows\Fonts\Arial.ttf)"}};
+#endif
     m_font.load(&fontStream, renderer, 20);
 
     if (!createUI(&m_ui, &m_font)) {
@@ -45,7 +50,7 @@ public:
       return false;
     }
 
-    if (!m_world.initialize(renderer, &m_resourceManager)) {
+    if (!m_world.initialize(&m_resourceManager)) {
       return false;
     }
 
@@ -112,4 +117,4 @@ private:
   World m_world;
 };
 
-CANVAS_APP(AsteroidDefender);
+CANVAS_APP(AsteroidDefender)
