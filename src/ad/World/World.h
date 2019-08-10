@@ -16,17 +16,7 @@ public:
   ~World() = default;
 
   bool initialize(hi::ResourceManager* resourceManager);
-
-  void onMouseMoved(const ca::MouseEvent& evt);
-  bool onMousePressed(const ca::MouseEvent& evt);
-  void onMouseReleased(const ca::MouseEvent& evt);
-  void onMouseWheel(const ca::MouseWheelEvent& evt);
-  void onKeyPressed(const ca::KeyEvent& evt);
-  void onKeyReleased(const ca::KeyEvent& evt);
-
-  // Set the cursor position in device coordinates.
-  void setCursorPosition(const ca::Pos& pos);
-
+  void tick(F32 delta);
   void render(SpriteRenderer* spriteRenderer);
 
 private:
@@ -34,10 +24,6 @@ private:
 
   Sprite* m_cursorSprite = nullptr;
   Sprite* m_commandCenterSprite = nullptr;
-
-  Camera m_camera;
-
-  ca::Pos m_cursorPosition;
 };
 
 #endif  // WORLD_H_

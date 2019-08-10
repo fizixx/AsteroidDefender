@@ -36,7 +36,7 @@ public:
     }
 
 #if OS(MACOSX)
-    nu::FileInputStream fontStream{nu::FilePath{R"(/Library/Fonts/Arial.ttf)"}};
+    nu::FileInputStream fontStream{nu::FilePath { R"(/Library/Fonts/Arial.ttf)" }};
 #else
     nu::FileInputStream fontStream{nu::FilePath{R"(C:\Windows\Fonts\Arial.ttf)"}};
 #endif
@@ -60,39 +60,71 @@ public:
   void onWindowResized(const ca::Size& size) override {
     WindowDelegate::onWindowResized(size);
 
+    m_camera.resize(size);
     m_spriteRenderer.resize(size);
     m_ui.resize(size);
   }
 
-  void onMouseMoved(const ca::MouseEvent& evt) override {
-    m_world.onMouseMoved(evt);
-  }
+  void onMouseMoved(const ca::MouseEvent& evt) override {}
 
   bool onMousePressed(const ca::MouseEvent& evt) override {
-    return m_world.onMousePressed(evt);
+    return false;
   }
 
-  void onMouseReleased(const ca::MouseEvent& evt) override {
-    m_world.onMouseReleased(evt);
-  }
+  void onMouseReleased(const ca::MouseEvent& evt) override {}
 
   void onMouseWheel(const ca::MouseWheelEvent& evt) override {
-    m_world.onMouseWheel(evt);
+    m_camera.zoomRelative(-evt.wheelOffset.y * 10.0f);
   }
 
   void onKeyPressed(const ca::KeyEvent& evt) override {
-    m_world.onKeyPressed(evt);
+    switch (evt.key) {
+      case ca::Key::A:
+        m_moveDelta += {1.0f, 0.0f};
+        break;
+
+      case ca::Key::D:
+        m_moveDelta += {-1.0f, 0.0f};
+        break;
+
+      case ca::Key::W:
+        m_moveDelta += {0.0f, -1.0f};
+        break;
+
+      case ca::Key::S:
+        m_moveDelta += {0.0f, 1.0f};
+        break;
+    }
   }
 
   void onKeyReleased(const ca::KeyEvent& evt) override {
-    m_world.onKeyReleased(evt);
+    switch (evt.key) {
+    case ca::Key::A:
+      m_moveDelta -= {1.0f, 0.0f};
+      break;
+
+    case ca::Key::D:
+      m_moveDelta -= {-1.0f, 0.0f};
+      break;
+
+    case ca::Key::W:
+      m_moveDelta -= {0.0f, -1.0f};
+      break;
+
+    case ca::Key::S:
+      m_moveDelta -= {0.0f, 1.0f};
+      break;
+    }
   }
 
   void tick(F32 delta) override {
-    m_spriteRenderer.tick(delta);
+    m_camera.moveRelative(m_moveDelta);
+    m_camera.tick(delta);
+    m_world.tick(delta);
   }
 
   void onRender(ca::Renderer* renderer) override {
+    m_spriteRenderer.beginFrame(&m_camera);
     m_world.render(&m_spriteRenderer);
     m_ui.render(renderer);
   }
@@ -113,8 +145,12 @@ private:
 
   el::Font m_font;
   el::Context m_ui;
+
   SpriteRenderer m_spriteRenderer;
+  Camera m_camera;
   World m_world;
+
+  ca::Vec2 m_moveDelta{0.0f, 0.0f};
 };
 
 CANVAS_APP(AsteroidDefender)

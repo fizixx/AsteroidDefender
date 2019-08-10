@@ -125,10 +125,9 @@ ca::Vec2 SpriteRenderer::convertDeviceCoordinatesToWorldCoordinates(ca::Pos pos)
   return {result.x, result.y};
 }
 
-void SpriteRenderer::tick(F32 UNUSED(delta)) {}
-
 void SpriteRenderer::beginFrame(Camera* camera) {
-  m_view = camera->calculateViewMatrix();
+  m_projection = camera->projectionMatrix();
+  m_view = camera->viewMatrix();
 }
 
 void SpriteRenderer::renderSprite(Sprite* sprite, const ca::Vec2& position, F32 scale) {

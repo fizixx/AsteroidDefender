@@ -2,7 +2,6 @@
 #define SPRITE_RENDERER_H_
 
 #include "ad/Sprites/Sprite.h"
-
 #include "ad/World/Camera.h"
 #include "canvas/Renderer/Renderer.h"
 #include "nucleus/Macros.h"
@@ -18,11 +17,8 @@ public:
 
   ca::Vec2 convertDeviceCoordinatesToWorldCoordinates(ca::Pos pos);
 
-  void tick(F32 delta);
-
   void beginFrame(Camera* camera);
   void renderSprite(Sprite* sprite, const ca::Vec2& position, F32 scale = 1.0f);
-
 
 private:
   DELETE_COPY_AND_MOVE(SpriteRenderer);
