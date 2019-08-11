@@ -24,6 +24,9 @@ public:
 private:
   DELETE_COPY_AND_MOVE(World);
 
+  EntityId createCursor();
+  EntityId createCommandCenter();
+
   ca::Vec2 m_cursorPosition{0.0f, 0.0f};
 
   Sprite* m_cursorSprite = nullptr;

@@ -16,6 +16,9 @@ bool World::initialize(hi::ResourceManager* resourceManager) {
     return false;
   }
 
+  m_cursorEntityId = createCursor();
+  createCommandCenter();
+
   return true;
 }
 
@@ -24,22 +27,31 @@ void World::setCursorPosition(const ca::Vec2& position) {
 }
 
 void World::tick(F32 delta) {
+  m_entities[m_cursorEntityId].position = m_cursorPosition;
 }
 
 void World::render(SpriteRenderer* spriteRenderer) {
-#if 0
-  static F32 pos = 0.0f;
-  static F32 delta = 1.0f;
-  // pos += delta * 0.1f;
-  if (pos >= 100.0f || pos <= -100.0f) {
-    delta *= -1.0f;
-  }
-  spriteRenderer->renderSprite(m_commandCenterSprite, {pos, 0.0f}, 100.0f);
-
-  spriteRenderer->renderSprite(m_cursorSprite, m_cursorPosition, 50.0f);
-#endif  // 0
-
   for (Entity& entity : m_entities) {
     spriteRenderer->renderSprite(entity.sprite, entity.position, entity.scale);
   }
+}
+
+EntityId World::createCursor() {
+  auto result = m_entities.pushBack([this](Entity* entity) {
+    entity->position = {0.0f, 0.0f};
+    entity->scale = 50.0f;
+    entity->sprite = m_cursorSprite;
+  });
+
+  return result.index();
+}
+
+EntityId World::createCommandCenter() {
+  auto result = m_entities.pushBack([this](Entity* entity) {
+    entity->position = {0.0f, 0.0f};
+    entity->scale = 100.0f;
+    entity->sprite = m_commandCenterSprite;
+  });
+
+  return result.index();
 }
