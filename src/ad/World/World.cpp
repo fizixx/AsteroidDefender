@@ -19,10 +19,15 @@ bool World::initialize(hi::ResourceManager* resourceManager) {
   return true;
 }
 
+void World::setCursorPosition(const ca::Vec2& position) {
+  m_cursorPosition = position;
+}
+
 void World::tick(F32 delta) {
 }
 
 void World::render(SpriteRenderer* spriteRenderer) {
+#if 0
   static F32 pos = 0.0f;
   static F32 delta = 1.0f;
   // pos += delta * 0.1f;
@@ -30,4 +35,11 @@ void World::render(SpriteRenderer* spriteRenderer) {
     delta *= -1.0f;
   }
   spriteRenderer->renderSprite(m_commandCenterSprite, {pos, 0.0f}, 100.0f);
+
+  spriteRenderer->renderSprite(m_cursorSprite, m_cursorPosition, 50.0f);
+#endif  // 0
+
+  for (Entity& entity : m_entities) {
+    spriteRenderer->renderSprite(entity.sprite, entity.position, entity.scale);
+  }
 }

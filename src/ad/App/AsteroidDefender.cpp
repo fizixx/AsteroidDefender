@@ -1,7 +1,6 @@
 #include "ad/Sprites/SpriteConverter.h"
 #include "ad/Sprites/SpriteRenderer.h"
 #include "ad/World/World.h"
-
 #include "canvas/App.h"
 #include "elastic/Context.h"
 #include "elastic/Views/LabelView.h"
@@ -13,8 +12,6 @@ class AsteroidDefender : public ca::WindowDelegate {
 public:
   AsteroidDefender() : ca::WindowDelegate{"Asteroid Defender"} {}
   ~AsteroidDefender() override = default;
-
-  // Override: ca::WindowDelegate
 
   bool onWindowCreated(ca::Window* window) override {
     if (!WindowDelegate::onWindowCreated(window)) {
@@ -65,7 +62,9 @@ public:
     m_ui.resize(size);
   }
 
-  void onMouseMoved(const ca::MouseEvent& evt) override {}
+  void onMouseMoved(const ca::MouseEvent& evt) override {
+    m_cursorPosition = {static_cast<F32>(evt.pos.x), static_cast<F32>(evt.pos.y)};
+  }
 
   bool onMousePressed(const ca::MouseEvent& evt) override {
     return false;
@@ -99,27 +98,31 @@ public:
 
   void onKeyReleased(const ca::KeyEvent& evt) override {
     switch (evt.key) {
-    case ca::Key::A:
-      m_moveDelta -= {1.0f, 0.0f};
-      break;
+      case ca::Key::A:
+        m_moveDelta -= {1.0f, 0.0f};
+        break;
 
-    case ca::Key::D:
-      m_moveDelta -= {-1.0f, 0.0f};
-      break;
+      case ca::Key::D:
+        m_moveDelta -= {-1.0f, 0.0f};
+        break;
 
-    case ca::Key::W:
-      m_moveDelta -= {0.0f, -1.0f};
-      break;
+      case ca::Key::W:
+        m_moveDelta -= {0.0f, -1.0f};
+        break;
 
-    case ca::Key::S:
-      m_moveDelta -= {0.0f, 1.0f};
-      break;
+      case ca::Key::S:
+        m_moveDelta -= {0.0f, 1.0f};
+        break;
     }
   }
 
   void tick(F32 delta) override {
     m_camera.moveRelative(m_moveDelta);
     m_camera.tick(delta);
+
+    auto p = m_camera.calculateCursorPositionInWorld(m_cursorPosition);
+    m_world.setCursorPosition(p);
+
     m_world.tick(delta);
   }
 
@@ -135,6 +138,7 @@ private:
   static bool createUI(el::Context* context, el::Font* font) {
     auto lv = new el::LabelView{context, "Asteroid Defender", font};
     context->getRootView()->addChild(lv);
+    lv->setVerticalAlignment(el::Alignment::Top);
 
     return true;
   }
@@ -151,6 +155,9 @@ private:
   World m_world;
 
   ca::Vec2 m_moveDelta{0.0f, 0.0f};
+
+  // Position of the cursor on the screen in range ([0..m_size.width], [0..m_size.height]}.
+  ca::Vec2 m_cursorPosition{0.0f, 0.0f};
 };
 
 CANVAS_APP(AsteroidDefender)

@@ -3,15 +3,12 @@
 
 #include "canvas/Math/Mat4.h"
 #include "canvas/Math/Vec2.h"
+#include "canvas/Utils/Pos.h"
 #include "canvas/Utils/Size.h"
 
 class Camera {
 public:
   Camera();
-
-  const ca::Size& size() const {
-    return m_size;
-  }
 
   void resize(const ca::Size& size);
 
@@ -37,11 +34,13 @@ public:
     return m_view;
   }
 
+  ca::Vec2 calculateCursorPositionInWorld(const ca::Vec2& screenPosition);
+
   void tick(F32 delta);
 
 private:
   // The size of the viewport we're rendering to.
-  ca::Size m_size;
+  ca::Vec2 m_size;
 
   struct {
     ca::Vec2 position{0.0f, 0.0f};
