@@ -66,11 +66,11 @@ public:
     m_cursorPosition = {static_cast<F32>(evt.pos.x), static_cast<F32>(evt.pos.y)};
   }
 
-  bool onMousePressed(const ca::MouseEvent& evt) override {
+  bool onMousePressed(const ca::MouseEvent& UNUSED(evt)) override {
     return false;
   }
 
-  void onMouseReleased(const ca::MouseEvent& evt) override {}
+  void onMouseReleased(const ca::MouseEvent& UNUSED(evt)) override {}
 
   void onMouseWheel(const ca::MouseWheelEvent& evt) override {
     m_camera.zoomRelative(-evt.wheelOffset.y * 10.0f);
@@ -93,6 +93,9 @@ public:
       case ca::Key::S:
         m_moveDelta += {0.0f, 1.0f};
         break;
+
+      default:
+        break;
     }
   }
 
@@ -112,6 +115,9 @@ public:
 
       case ca::Key::S:
         m_moveDelta -= {0.0f, 1.0f};
+        break;
+
+      default:
         break;
     }
   }

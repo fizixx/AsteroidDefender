@@ -26,7 +26,7 @@ void World::setCursorPosition(const ca::Vec2& position) {
   m_cursorPosition = position;
 }
 
-void World::tick(F32 delta) {
+void World::tick(F32 UNUSED(delta)) {
   m_entities[m_cursorEntityId].position = m_cursorPosition;
 }
 
