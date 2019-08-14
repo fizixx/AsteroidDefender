@@ -2,6 +2,7 @@
 #include "ad/Sprites/SpriteRenderer.h"
 #include "ad/World/World.h"
 #include "canvas/App.h"
+#include "canvas/Math/Intersection.h"
 #include "elastic/Context.h"
 #include "elastic/Views/LabelView.h"
 #include "hive/PhysicalResourceLocator.h"
@@ -51,11 +52,16 @@ public:
       return false;
     }
 
+    m_camera.moveTo({0.0f, 0.0f, 150.0f});
+    m_camera.reorient({0.0f, 0.0f, -1.0f});
+
     return true;
   }
 
   void onWindowResized(const ca::Size& size) override {
     WindowDelegate::onWindowResized(size);
+
+    m_screenSize = ca::Vec2{static_cast<F32>(size.width), static_cast<F32>(size.height)};
 
     m_camera.resize(size);
     m_spriteRenderer.resize(size);
@@ -73,25 +79,25 @@ public:
   void onMouseReleased(const ca::MouseEvent& UNUSED(evt)) override {}
 
   void onMouseWheel(const ca::MouseWheelEvent& evt) override {
-    m_camera.zoomRelative(-evt.wheelOffset.y * 10.0f);
+    m_camera.moveRelative({0.0f, 0.0f, -evt.wheelOffset.y * 10.0f});
   }
 
   void onKeyPressed(const ca::KeyEvent& evt) override {
     switch (evt.key) {
       case ca::Key::A:
-        m_moveDelta += {1.0f, 0.0f};
+        m_moveDelta += {1.0f, 0.0f, 0.0f};
         break;
 
       case ca::Key::D:
-        m_moveDelta += {-1.0f, 0.0f};
+        m_moveDelta += {-1.0f, 0.0f, 0.0f};
         break;
 
       case ca::Key::W:
-        m_moveDelta += {0.0f, -1.0f};
+        m_moveDelta += {0.0f, -1.0f, 0.0f};
         break;
 
       case ca::Key::S:
-        m_moveDelta += {0.0f, 1.0f};
+        m_moveDelta += {0.0f, 1.0f, 0.0f};
         break;
 
       default:
@@ -102,19 +108,19 @@ public:
   void onKeyReleased(const ca::KeyEvent& evt) override {
     switch (evt.key) {
       case ca::Key::A:
-        m_moveDelta -= {1.0f, 0.0f};
+        m_moveDelta -= {1.0f, 0.0f, 0.0f};
         break;
 
       case ca::Key::D:
-        m_moveDelta -= {-1.0f, 0.0f};
+        m_moveDelta -= {-1.0f, 0.0f, 0.0f};
         break;
 
       case ca::Key::W:
-        m_moveDelta -= {0.0f, -1.0f};
+        m_moveDelta -= {0.0f, -1.0f, 0.0f};
         break;
 
       case ca::Key::S:
-        m_moveDelta -= {0.0f, 1.0f};
+        m_moveDelta -= {0.0f, 1.0f, 0.0f};
         break;
 
       default:
@@ -126,8 +132,50 @@ public:
     m_camera.moveRelative(m_moveDelta);
     m_camera.tick(delta);
 
-    auto p = m_camera.calculateCursorPositionInWorld(m_cursorPosition);
-    m_world.setCursorPosition(p);
+#if 0
+    ca::Mat4 cameraInverse = ca::inverse(m_view * m_projection);
+
+  F32 mouseX = (2.0f * screenPosition.x) / m_size.x - 1.0f;
+  F32 mouseY = (2.0f * screenPosition.y) / m_size.y - 1.0f;
+  F32 mouseZ = -1.0f;
+
+  ca::Vec4 mouse = ca::Vec4{mouseX, mouseY, mouseZ, 1.0f};
+
+  ca::Vec4 mouseInWorldSpace = cameraInverse * mouse;
+  mouseInWorldSpace.x /= mouseInWorldSpace.w;
+  mouseInWorldSpace.y /= mouseInWorldSpace.w;
+  mouseInWorldSpace.z /= mouseInWorldSpace.w;
+  mouseInWorldSpace.w /= mouseInWorldSpace.w;
+
+  ca::Plane plane{{0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f}};
+  auto intersection = ca::intersection(
+      plane,
+      {m_current.position, (m_current.position + ca::Vec3{mouseInWorldSpace.x, mouseInWorldSpace.y,
+                                                          mouseInWorldSpace.z}) -
+                               m_current.position});
+
+  LOG(Info) << "mouse: " << mouse << ", mouseInWorldSpace: " << mouseInWorldSpace;
+
+  return {intersection.position.x, intersection.position.y};
+#endif  // 0
+
+#if 1
+#if 0
+    ca::Vec2 normalizedCursorPosition{
+        (2.0f * m_cursorPosition.x) / m_screenSize.x - 1.0f,
+        (-2.0f * m_cursorPosition.y) / m_screenSize.y + 1.0f,
+    };
+#else
+    ca::Vec2 normalizedCursorPosition{1.0f, 0.0f};
+#endif
+    auto ray = m_camera.createRayForMouse(normalizedCursorPosition);
+#else
+    auto ray = m_camera.createRay();
+#endif  // 0
+
+    ca::Plane worldGround{{0.0f, 0.0f, 1.0f}, 0.0f};
+    auto i = ca::intersection(worldGround, ray);
+    m_world.setCursorPosition({i.position.x, i.position.y});
 
     m_world.tick(delta);
   }
@@ -160,7 +208,10 @@ private:
   Camera m_camera;
   World m_world;
 
-  ca::Vec2 m_moveDelta{0.0f, 0.0f};
+  ca::Vec3 m_moveDelta{0.0f, 0.0f, 0.0f};
+
+  // Client size of the area we're rendering the world into:
+  ca::Vec2 m_screenSize{0.0f, 0.0f};
 
   // Position of the cursor on the screen in range ([0..m_size.width], [0..m_size.height]}.
   ca::Vec2 m_cursorPosition{0.0f, 0.0f};

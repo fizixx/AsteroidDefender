@@ -25,7 +25,7 @@ private:
   DELETE_COPY_AND_MOVE(World);
 
   EntityId createCursor();
-  EntityId createCommandCenter();
+  EntityId createCommandCenter(const ca::Vec2& position);
 
   ca::Vec2 m_cursorPosition{0.0f, 0.0f};
 

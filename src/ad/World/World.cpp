@@ -17,7 +17,11 @@ bool World::initialize(hi::ResourceManager* resourceManager) {
   }
 
   m_cursorEntityId = createCursor();
-  createCommandCenter();
+  createCommandCenter({0.0f, 0.0f});
+  createCommandCenter({100.0f, 0.0f});
+  createCommandCenter({-100.0f, 0.0f});
+  createCommandCenter({0.0f, 100.0f});
+  createCommandCenter({0.0f, -100.0f});
 
   return true;
 }
@@ -46,9 +50,9 @@ EntityId World::createCursor() {
   return result.index();
 }
 
-EntityId World::createCommandCenter() {
-  auto result = m_entities.pushBack([this](Entity* entity) {
-    entity->position = {0.0f, 0.0f};
+EntityId World::createCommandCenter(const ca::Vec2& position) {
+  auto result = m_entities.pushBack([this, &position](Entity* entity) {
+    entity->position = position;
     entity->scale = 100.0f;
     entity->sprite = m_commandCenterSprite;
   });

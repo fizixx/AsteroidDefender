@@ -2,29 +2,38 @@
 #define CAMERA_H_
 
 #include "canvas/Math/Mat4.h"
+#include "canvas/Math/Ray.h"
 #include "canvas/Math/Vec2.h"
 #include "canvas/Utils/Pos.h"
 #include "canvas/Utils/Size.h"
 
 class Camera {
 public:
-  Camera();
+  explicit Camera(const ca::Vec3& worldUp = {0.0f, 1.0f, 0.0f});
 
   void resize(const ca::Size& size);
 
-  const ca::Vec2& position() const {
+  const ca::Vec3& position() const {
     return m_current.position;
   }
 
-  void moveTo(const ca::Vec2& position);
-  void moveRelative(const ca::Vec2& position);
+  void moveTo(const ca::Vec3& position);
+  void moveRelative(const ca::Vec3& position);
 
-  F32 zoom() const {
-    return m_current.zoom;
+  const ca::Vec3& direction() const {
+    return m_current.direction;
   }
 
-  void zoomTo(F32 zoom);
-  void zoomRelative(F32 relativeZoom);
+  // Orient the camera to look at the target position.
+  void reorient(const ca::Vec3& direction);
+
+  // Create a ray that starts from the camera position and points towards the camera direction.
+  ca::Ray createRay() const;
+
+  // Create a ray that starts from the camera position and points towards a mouse pointer in clip
+  // space.
+  // NOTE: The mouse position should be in the range: [-1.0f..1.0f]
+  ca::Ray createRayForMouse(const ca::Vec2& mousePosition);
 
   const ca::Mat4& projectionMatrix() const {
     return m_projection;
@@ -34,17 +43,23 @@ public:
     return m_view;
   }
 
-  ca::Vec2 calculateCursorPositionInWorld(const ca::Vec2& screenPosition);
-
   void tick(F32 delta);
 
 private:
-  // The size of the viewport we're rendering to.
+  // The size and of the viewport we're rendering to.
   ca::Vec2 m_size;
 
+  // The up vector for world space.
+  ca::Vec3 m_worldUp;
+
+  // The current and target attributes of the camera.  The current is always animated towards the
+  // target on each `tick`.
   struct {
-    ca::Vec2 position{0.0f, 0.0f};
-    F32 zoom = 100.0f;
+    // The position of the camera in world space.
+    ca::Vec3 position{0.0f, 0.0f, 0.0f};
+
+    // The direction the camera is pointing in world space.
+    ca::Vec3 direction{0.0f, 0.0f, -1.0f};
   } m_current, m_target;
 
   ca::Mat4 m_projection;
