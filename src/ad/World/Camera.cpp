@@ -33,19 +33,19 @@ void Camera::resize(const ca::Size& size) {
 }
 
 void Camera::moveTo(const ca::Vec3& position) {
-  m_target.position = position;
+  m_position = position;
 }
 
 void Camera::moveRelative(const ca::Vec3& relativePosition) {
-  moveTo(m_target.position + relativePosition);
+  moveTo(m_position + relativePosition);
 }
 
 void Camera::reorient(const ca::Vec3& direction) {
-  m_target.direction = ca::normalize(direction);
+  m_direction = ca::normalize(direction);
 }
 
 ca::Ray Camera::createRay() const {
-  return {m_current.position, m_current.direction};
+  return {m_position, m_direction};
 }
 
 ca::Ray Camera::createRayForMouse(const ca::Vec2& mousePosition) {
@@ -59,17 +59,14 @@ ca::Ray Camera::createRayForMouse(const ca::Vec2& mousePosition) {
             << ", positionInWorldSpace: " << positionInWorldSpace;
 #endif
 
-  return {m_current.position,
+  return {m_position,
           ca::Vec3{positionInWorldSpace.x, positionInWorldSpace.y, positionInWorldSpace.z}};
 }
 
 void Camera::tick(F32 UNUSED(delta)) {
-  m_current.position += (m_target.position - m_current.position) * 0.1f;
-  m_current.direction += (m_target.direction - m_current.direction) * 0.1f;
-
   F32 aspectRatio = m_size.x / m_size.y;
   m_projection = ca::perspectiveProjection(45.0f, aspectRatio, 0.1f, 1000.0f);
 
   // NOTE: The direction should point in the reverse direction as where the camera is pointing.
-  m_view = createCameraMatrix(m_current.position, m_current.direction, m_worldUp);
+  m_view = createCameraMatrix(m_position, m_direction, m_worldUp);
 }

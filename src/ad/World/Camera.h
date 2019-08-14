@@ -14,14 +14,14 @@ public:
   void resize(const ca::Size& size);
 
   const ca::Vec3& position() const {
-    return m_current.position;
+    return m_position;
   }
 
   void moveTo(const ca::Vec3& position);
   void moveRelative(const ca::Vec3& position);
 
   const ca::Vec3& direction() const {
-    return m_current.direction;
+    return m_direction;
   }
 
   // Orient the camera to look at the target position.
@@ -52,15 +52,11 @@ private:
   // The up vector for world space.
   ca::Vec3 m_worldUp;
 
-  // The current and target attributes of the camera.  The current is always animated towards the
-  // target on each `tick`.
-  struct {
-    // The position of the camera in world space.
-    ca::Vec3 position{0.0f, 0.0f, 0.0f};
+  // The position of the camera in world space.
+  ca::Vec3 m_position{0.0f, 0.0f, 0.0f};
 
-    // The direction the camera is pointing in world space.
-    ca::Vec3 direction{0.0f, 0.0f, -1.0f};
-  } m_current, m_target;
+  // The direction the camera is pointing in world space.
+  ca::Vec3 m_direction{0.0f, 0.0f, -1.0f};
 
   ca::Mat4 m_projection;
   ca::Mat4 m_view;

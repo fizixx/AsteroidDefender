@@ -52,8 +52,8 @@ public:
       return false;
     }
 
-    m_camera.moveTo({0.0f, 0.0f, 150.0f});
-    m_camera.reorient({0.0f, 0.0f, -1.0f});
+    m_worldCamera.moveTo({0.0f, 0.0f, 150.0f});
+    m_worldCamera.reorient({0.0f, 0.0f, -1.0f});
 
     return true;
   }
@@ -63,7 +63,7 @@ public:
 
     m_screenSize = ca::Vec2{static_cast<F32>(size.width), static_cast<F32>(size.height)};
 
-    m_camera.resize(size);
+    m_worldCamera.resize(size);
     m_spriteRenderer.resize(size);
     m_ui.resize(size);
   }
@@ -79,7 +79,7 @@ public:
   void onMouseReleased(const ca::MouseEvent& UNUSED(evt)) override {}
 
   void onMouseWheel(const ca::MouseWheelEvent& evt) override {
-    m_camera.moveRelative({0.0f, 0.0f, -evt.wheelOffset.y * 10.0f});
+    m_worldCamera.moveRelative({0.0f, 0.0f, -evt.wheelOffset.y * 10.0f});
   }
 
   void onKeyPressed(const ca::KeyEvent& evt) override {
@@ -98,6 +98,10 @@ public:
 
       case ca::Key::S:
         m_moveDelta += {0.0f, 1.0f, 0.0f};
+        break;
+
+      case ca::Key::C:
+        m_useDebugCamera = !m_useDebugCamera;
         break;
 
       default:
@@ -129,8 +133,8 @@ public:
   }
 
   void tick(F32 delta) override {
-    m_camera.moveRelative(m_moveDelta);
-    m_camera.tick(delta);
+    m_worldCamera.moveRelative(m_moveDelta);
+    m_worldCamera.tick(delta);
 
 #if 0
     ca::Mat4 cameraInverse = ca::inverse(m_view * m_projection);
@@ -168,9 +172,9 @@ public:
 #else
     ca::Vec2 normalizedCursorPosition{1.0f, 0.0f};
 #endif
-    auto ray = m_camera.createRayForMouse(normalizedCursorPosition);
+    auto ray = m_worldCamera.createRayForMouse(normalizedCursorPosition);
 #else
-    auto ray = m_camera.createRay();
+    auto ray = m_WorldCamera.createRay();
 #endif  // 0
 
     ca::Plane worldGround{{0.0f, 0.0f, 1.0f}, 0.0f};
@@ -181,7 +185,7 @@ public:
   }
 
   void onRender(ca::Renderer* renderer) override {
-    m_spriteRenderer.beginFrame(&m_camera);
+    m_spriteRenderer.beginFrame(m_useDebugCamera ? &m_debugCamera : &m_worldCamera);
     m_world.render(&m_spriteRenderer);
     m_ui.render(renderer);
   }
@@ -205,8 +209,11 @@ private:
   el::Context m_ui;
 
   SpriteRenderer m_spriteRenderer;
-  Camera m_camera;
+  Camera m_worldCamera;
   World m_world;
+
+  bool m_useDebugCamera = false;
+  Camera m_debugCamera;
 
   ca::Vec3 m_moveDelta{0.0f, 0.0f, 0.0f};
 
