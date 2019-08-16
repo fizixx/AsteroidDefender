@@ -2,6 +2,7 @@
 
 #include "canvas/Math/Intersection.h"
 #include "canvas/Math/Transform.h"
+#include "nucleus/Logging.h"
 #include "nucleus/Macros.h"
 
 Camera::Camera(const ca::Vec3& worldUp) : m_worldUp{ca::normalize(worldUp)} {
@@ -45,13 +46,15 @@ ca::Ray Camera::createRay() const {
 }
 
 ca::Ray Camera::createRayForMouse(const ca::Vec2& mousePosition) {
-  ca::Mat4 cameraInverse = ca::inverse(m_view * m_projection);
+  ca::Mat4 cameraInverse = ca::inverse(m_projection);
 
   auto positionInWorldSpace =
-      cameraInverse * ca::Vec4{mousePosition.x, mousePosition.y, 0.0f, 1.0f};
+      cameraInverse * ca::Vec4{mousePosition.x, mousePosition.y, 1.0f, 1.0f};
+
+  // positionInWorldSpace = ca::inverse(m_view) * positionInWorldSpace;
 
 #if 0
-  LOG(Info) << "m_current.position: " << m_current.position
+  LOG(Info) << "mousePosition: " << mousePosition << ", m_position: " << m_position
             << ", positionInWorldSpace: " << positionInWorldSpace;
 #endif
 

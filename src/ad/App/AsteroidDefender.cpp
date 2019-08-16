@@ -4,15 +4,27 @@
 #include "ad/World/World.h"
 #include "canvas/App.h"
 #include "canvas/Math/Intersection.h"
+#include "canvas/Renderer/LineRenderer.h"
 #include "elastic/Context.h"
 #include "elastic/Views/LabelView.h"
 #include "hive/PhysicalResourceLocator.h"
 #include "hive/ResourceManager.h"
 #include "nucleus/Streams/FileInputStream.h"
 
+void drawCross(ca::LineRenderer* lineRenderer, const ca::Vec3& position, const ca::Color& color,
+               F32 scale = 1.0f) {
+  lineRenderer->renderLine(position - ca::Vec3{1.0f, 0.0f, 0.0f} * scale,
+                           position + ca::Vec3{1.0f, 0.0f, 0.0f} * scale, color);
+  lineRenderer->renderLine(position - ca::Vec3{0.0f, 1.0f, 0.0f} * scale,
+                           position + ca::Vec3{0.0f, 1.0f, 0.0f} * scale, color);
+  lineRenderer->renderLine(position - ca::Vec3{0.0f, 0.0f, 1.0f} * scale,
+                           position + ca::Vec3{0.0f, 0.0f, 1.0f} * scale, color);
+}
+
 class AsteroidDefender : public ca::WindowDelegate {
 public:
-  AsteroidDefender() : ca::WindowDelegate{"Asteroid Defender"} {}
+  AsteroidDefender()
+    : ca::WindowDelegate{"Asteroid Defender"}, m_ray{{0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}} {}
   ~AsteroidDefender() override = default;
 
   bool onWindowCreated(ca::Window* window) override {
@@ -21,6 +33,7 @@ public:
     }
 
     ca::Renderer* renderer = window->getRenderer();
+    m_lineRenderer.initialize(renderer);
 
     auto assetsPath = nu::getCurrentWorkingDirectory() / "assets";
     LOG(Info) << "Assets path: " << assetsPath.getPath();
@@ -54,7 +67,9 @@ public:
     }
 
     m_worldCamera.moveTo({0.0f, 0.0f, 150.0f});
-    m_worldCamera.rotate(-90.0f, 0.0f);
+    m_worldCamera.rotate(180.0f, 0.0f);
+    m_debugCamera.moveTo(m_worldCamera.position());
+    m_debugCamera.rotate(180.0f, 0.0f);
 
     return true;
   }
@@ -74,9 +89,8 @@ public:
       m_debugCameraInputController.onMouseMoved(event);
     } else {
       m_worldCameraInputController.onMouseMoved(event);
+      m_currentMousePosition = {static_cast<F32>(event.pos.x), static_cast<F32>(event.pos.y)};
     }
-
-    m_cursorPosition = {static_cast<F32>(event.pos.x), static_cast<F32>(event.pos.y)};
   }
 
   bool onMousePressed(const ca::MouseEvent& event) override {
@@ -134,12 +148,72 @@ public:
       m_worldCameraInputController.tick(delta);
     }
 
+    {
+#if 1
+      F32 mouseX = (m_currentMousePosition.x / m_screenSize.x * 2.0f) - 1.0f;
+      F32 mouseY = (m_currentMousePosition.y / m_screenSize.y * 2.0f) - 1.0f;
+      m_ray = m_worldCamera.createRayForMouse({mouseX, mouseY});
+#else
+      m_ray = m_worldCamera.createRay();
+#endif
+      ca::Plane worldPlane{{0.0f, 0.0f, 1.0f}, 0.0f};
+      auto result = ca::intersection(worldPlane, m_ray);
+      m_world.setCursorPosition({result.position.x, result.position.y});
+    }
+
     m_world.tick(delta);
   }
 
   void onRender(ca::Renderer* renderer) override {
+    m_lineRenderer.beginFrame();
     m_spriteRenderer.beginFrame(m_useDebugCamera ? &m_debugCamera : &m_worldCamera);
+
     m_world.render(&m_spriteRenderer);
+
+    //    m_lineRenderer.renderLine({0.0f, 0.0f, 0.0f}, m_worldCamera.position(), ca::Color::blue);
+    //    m_lineRenderer.renderLine(m_ray.origin, m_ray.origin + m_ray.direction * 100.0f,
+    //                              ca::Color::red);
+    //    m_lineRenderer.renderLine(m_worldCamera.position(),
+    //                              m_worldCamera.position() + ca::Vec3{1000.0f, 1000.0f, -1000.0f},
+    //                              ca::Color::white);
+    //    m_lineRenderer.renderLine(m_worldCamera.position(),
+    //                              m_worldCamera.position() + ca::Vec3{1000.0f, -1000.0f,
+    //                              -1000.0f}, ca::Color::white);
+    //    m_lineRenderer.renderLine(m_worldCamera.position(),
+    //                              m_worldCamera.position() + ca::Vec3{-1000.0f, -1000.0f,
+    //                              -1000.0f}, ca::Color::white);
+    //    m_lineRenderer.renderLine(m_worldCamera.position(),
+    //                              m_worldCamera.position() + ca::Vec3{-1000.0f, 1000.0f,
+    //                              -1000.0f}, ca::Color::white);
+
+    //    m_lineRenderer.renderLine({0.0f, 0.0f, 0.0f}, {1000.0f, 1000.0f, -1000.0f},
+    //    ca::Color::red); m_lineRenderer.renderLine({0.0f, 0.0f, 0.0f}, {800.0f, 800.0f, -800.0f},
+    //    ca::Color::blue);
+
+    // drawCross(&m_lineRenderer, m_worldCamera.position(), ca::Color::white);
+    // drawCross(&m_lineRenderer, m_ray.origin + m_ray.direction, ca::Color::red);
+    drawCross(&m_lineRenderer, {0.0f, 0.0f, 0.0f}, ca::Color::white, 0.5f);
+
+    ca::Vec3 mPos{0.99999f, 0.99999f, -0.99999f};
+    drawCross(&m_lineRenderer, mPos, ca::Color::blue);
+
+    m_lineRenderer.render(ca::Mat4::identity);
+
+    m_lineRenderer.beginFrame();
+
+    auto inv = ca::inverse(m_worldCamera.viewMatrix() * m_worldCamera.projectionMatrix());
+    auto newPos = ca::Vec4{mPos, 1.0f} * inv;
+    LOG(Info) << "newPos = " << newPos;
+    drawCross(&m_lineRenderer, {newPos.x, newPos.y, newPos.z}, ca::Color::green);
+
+#if 1
+    ca::Mat4 debugTransform = m_debugCamera.projectionMatrix() * m_debugCamera.viewMatrix();
+    ca::Mat4 worldTransform = m_worldCamera.projectionMatrix() * m_worldCamera.viewMatrix();
+    auto transform = m_useDebugCamera ? debugTransform : worldTransform;
+
+    m_lineRenderer.render(transform);
+#endif  // 0
+
     m_ui.render(renderer);
   }
 
@@ -159,6 +233,8 @@ private:
   hi::PhysicalFileResourceLocator m_physicalFileResourceLocator;
   SpriteConverter m_spriteConverter;
 
+  ca::LineRenderer m_lineRenderer;
+
   el::Font m_font;
   el::Context m_ui;
 
@@ -174,13 +250,13 @@ private:
   CameraInputController m_worldCameraInputController{&m_worldCamera, 0.1f};
   CameraInputController m_debugCameraInputController{&m_debugCamera, 0.1f};
 
-  ca::Vec3 m_moveDelta{0.0f, 0.0f, 0.0f};
+  ca::Ray m_ray;
 
   // Client size of the area we're rendering the world into:
   ca::Vec2 m_screenSize{0.0f, 0.0f};
 
   // Position of the cursor on the screen in range ([0..m_size.width], [0..m_size.height]}.
-  ca::Vec2 m_cursorPosition{0.0f, 0.0f};
+  ca::Vec2 m_currentMousePosition{0.0f, 0.0f};
 };
 
 CANVAS_APP(AsteroidDefender)

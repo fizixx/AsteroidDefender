@@ -48,7 +48,15 @@ void CameraInputController::onKeyPressed(const ca::KeyEvent& event) {
       break;
 
     case ca::Key::S:
-      m_moveDirection.y -= 1.0;
+      m_moveDirection.y -= 1.0f;
+      break;
+
+    case ca::Key::Q:
+      m_moveDirection.z += 1.0f;
+      break;
+
+    case ca::Key::Z:
+      m_moveDirection.z -= 1.0f;
       break;
 
     default:
@@ -74,16 +82,25 @@ void CameraInputController::onKeyReleased(const ca::KeyEvent& event) {
       m_moveDirection.y += 1.0;
       break;
 
+    case ca::Key::Q:
+      m_moveDirection.z -= 1.0f;
+      break;
+
+    case ca::Key::Z:
+      m_moveDirection.z += 1.0f;
+      break;
+
     default:
       break;
   }
 }
 
 void CameraInputController::tick(F32 delta) {
-  // NOTE: This recalculates the view matrix of the camera twice!!!!!!!!
+  constexpr F32 kMovementSpeed = 3.0f;
 
   auto forwardMovement = m_camera->forward() * m_moveDirection.y;
   auto rightMovement = m_camera->right() * m_moveDirection.x;
+  auto upMovement = m_camera->up() * m_moveDirection.z;
 
-  m_camera->moveRelative((forwardMovement + rightMovement) * delta);
+  m_camera->moveRelative((forwardMovement + rightMovement + upMovement) * kMovementSpeed * delta);
 }

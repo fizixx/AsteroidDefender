@@ -1,7 +1,7 @@
 #ifndef AD_CAMERA_INPUT_CONTROLLER_H_
 #define AD_CAMERA_INPUT_CONTROLLER_H_
 
-#include "canvas/Math/Vec2.h"
+#include "canvas/Math/Vec3.h"
 #include "canvas/Windows/Event.h"
 #include "nucleus/Macros.h"
 
@@ -29,7 +29,7 @@ private:
   // The speed at which the camera on mouse movement.
   F32 m_mouseSensitivity;
 
-  ca::Vec2 m_moveDirection{0.0f, 0.0f};
+  ca::Vec3 m_moveDirection{0.0f, 0.0f, 0.0f};
 
   bool m_mouseIsDown = false;
   ca::Pos m_lastMousePosition{0, 0};
