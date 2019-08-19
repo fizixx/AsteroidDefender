@@ -1,7 +1,9 @@
 #ifndef CAMERA_H_
 #define CAMERA_H_
 
+#include "canvas/Math/Angle.h"
 #include "canvas/Math/Mat4.h"
+#include "canvas/Math/Quaternion.h"
 #include "canvas/Math/Ray.h"
 #include "canvas/Math/Vec2.h"
 #include "canvas/Utils/Pos.h"
@@ -14,43 +16,63 @@ public:
   void resize(const ca::Size& size);
   void resize(const ca::Vec2& size);
 
+  // Position
+
   const ca::Vec3& position() const {
     return m_position;
   }
 
+  // Move the camera to the given `position`.
   void moveTo(const ca::Vec3& position);
-  void moveRelative(const ca::Vec3& position);
 
+  // Increase the camera's position by the given `offset`.
+  void move(const ca::Vec3& offset);
+
+  // Rotation
+
+  // Increase the camera's current yaw/pitch/roll by the given `angle`.
+  void yaw(ca::Angle angle);
+  void pitch(ca::Angle angle);
+  void roll(ca::Angle angle);
+
+  // Increase the camera's orientation by the given `angle` around the given `axis`.
+  void rotate(const ca::Vec3& axis, ca::Angle angle);
+
+  // Increase the camera's orientation by the given `orientation`.
+  void rotate(const ca::Quaternion& orientation);
+
+  // Return the camera's current forward vector.
   const ca::Vec3& forward() const {
     return m_forward;
   }
 
+  // Return the camera's current right vector.
   const ca::Vec3& right() const {
     return m_right;
   }
 
+  // Return the camera's current up vector.
   const ca::Vec3& up() const {
     return m_up;
   }
 
-  // Set the rotation of the camera in the horizontal and vertical orientations respectively
-  void rotate(F32 yaw, F32 pitch);
+  // Rays
 
-  // Rotate the camera relatively to its current rotation.
-  void rotateRelative(F32 relativeYaw, F32 relativePitch);
-
-  // Create a ray that starts from the camera position and points towards the camera direction.
+  // Create a ray that starts from the camera's current position and points towards the camera
+  // forward direction.
   ca::Ray createRay() const;
 
-  // Create a ray that starts from the camera position and points towards a mouse pointer in clip
+  // Create a ray that starts from the camera's current position and points towards a mouse pointer in clip
   // space.
   // NOTE: The mouse position should be in the range: [-1.0f..1.0f]
   ca::Ray createRayForMouse(const ca::Vec2& mousePosition);
 
+  // Return the current projection matrix of the camera.
   const ca::Mat4& projectionMatrix() const {
     return m_projection;
   }
 
+  // Return the current view amtrix of the camera.
   const ca::Mat4& viewMatrix() const {
     return m_view;
   }
@@ -69,8 +91,7 @@ private:
   ca::Vec3 m_position{0.0f, 0.0f, 0.0f};
 
   // Rotation angles.
-  F32 m_yawDegrees = 0.0f;
-  F32 m_pitchDegrees = 0.0f;
+  ca::Quaternion m_orientation;
 
   // Basis vectors.
   ca::Vec3 m_forward{0.0f, 0.0f, -1.0f};

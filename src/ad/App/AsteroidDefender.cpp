@@ -66,10 +66,11 @@ public:
       return false;
     }
 
-    m_worldCamera.moveTo({0.0f, 0.0f, 150.0f});
-    m_worldCamera.rotate(180.0f, 0.0f);
+    m_worldCamera.moveTo({0.0f, 0.0f, 50.0f});
+    // m_worldCamera.yaw(ca::Angle::fromDegrees(90.0f));
+    m_worldCamera.yaw(ca::Angle::fromDegrees(0.0f));
     m_debugCamera.moveTo(m_worldCamera.position());
-    m_debugCamera.rotate(180.0f, 0.0f);
+    // m_debugCamera.rotate(180.0f, 0.0f);
 
     return true;
   }
@@ -112,7 +113,7 @@ public:
   }
 
   void onMouseWheel(const ca::MouseWheelEvent& evt) override {
-    m_worldCamera.moveRelative({0.0f, 0.0f, -evt.wheelOffset.y * 10.0f});
+    m_worldCamera.move({0.0f, 0.0f, -evt.wheelOffset.y * 10.0f});
   }
 
   void onKeyPressed(const ca::KeyEvent& evt) override {
@@ -142,6 +143,13 @@ public:
   }
 
   void tick(F32 delta) override {
+    // static F32 angle = 0.0f;
+    // ca::Angle a = ca::Angle::fromDegrees(angle);
+    // a += 1.0f;
+
+    // m_worldCamera.yaw(a);
+
+
     if (m_useDebugCamera) {
       m_debugCameraInputController.tick(delta);
     } else {
@@ -151,7 +159,7 @@ public:
     {
 #if 1
       F32 mouseX = (m_currentMousePosition.x / m_screenSize.x * 2.0f) - 1.0f;
-      F32 mouseY = (m_currentMousePosition.y / m_screenSize.y * 2.0f) - 1.0f;
+      F32 mouseY = 1.0f - (m_currentMousePosition.y / m_screenSize.y * 2.0f);
       m_ray = m_worldCamera.createRayForMouse({mouseX, mouseY});
 #else
       m_ray = m_worldCamera.createRay();
@@ -192,10 +200,12 @@ public:
 
     // drawCross(&m_lineRenderer, m_worldCamera.position(), ca::Color::white);
     // drawCross(&m_lineRenderer, m_ray.origin + m_ray.direction, ca::Color::red);
-    drawCross(&m_lineRenderer, {0.0f, 0.0f, 0.0f}, ca::Color::white, 0.5f);
+    // drawCross(&m_lineRenderer, {0.0f, 0.0f, 0.0f}, ca::Color::white, 0.5f);
 
-    ca::Vec3 mPos{0.99999f, 0.99999f, -0.99999f};
-    drawCross(&m_lineRenderer, mPos, ca::Color::blue);
+    // ca::Vec3 mPos{0.99999f, 0.99999f, -0.99999f};
+    // drawCross(&m_lineRenderer, mPos, ca::Color::blue);
+
+#if 0
 
     m_lineRenderer.render(ca::Mat4::identity);
 
@@ -213,6 +223,7 @@ public:
 
     m_lineRenderer.render(transform);
 #endif  // 0
+#endif
 
     m_ui.render(renderer);
   }

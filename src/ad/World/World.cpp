@@ -22,11 +22,14 @@ bool World::initialize(hi::ResourceManager* resourceManager) {
   createCommandCenter({-100.0f, 0.0f});
   createCommandCenter({0.0f, 100.0f});
   createCommandCenter({0.0f, -100.0f});
+  createCommandCenter({0.0f, 0.0f});
+  createCommandCenter({0.0f, 0.0f});
 
   return true;
 }
 
 void World::setCursorPosition(const ca::Vec2& position) {
+  LOG(Info) << "new cursor position: " << position;
   m_cursorPosition = position;
 }
 

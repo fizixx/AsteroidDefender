@@ -26,19 +26,34 @@ void Camera::moveTo(const ca::Vec3& position) {
   updateViewMatrix();
 }
 
-void Camera::moveRelative(const ca::Vec3& relativePosition) {
-  moveTo(m_position + relativePosition);
+void Camera::move(const ca::Vec3& offset) {
+  moveTo(m_position + offset);
 }
 
-void Camera::rotate(F32 yaw, F32 pitch) {
-  m_yawDegrees = yaw;
-  m_pitchDegrees = pitch;
+void Camera::yaw(ca::Angle angle) {
+  rotate(m_orientation * ca::Vec3::up, angle);
+}
+
+void Camera::pitch(ca::Angle angle) {
+  rotate(m_orientation * ca::Vec3::right, angle);
 
   updateViewMatrix();
 }
 
-void Camera::rotateRelative(F32 relativeYaw, F32 relativePitch) {
-  rotate(m_yawDegrees + relativeYaw, m_pitchDegrees + relativePitch);
+void Camera::roll(ca::Angle angle) {
+  rotate(m_orientation * ca::Vec3::forward, angle);
+
+  updateViewMatrix();
+}
+
+void Camera::rotate(const ca::Vec3& axis, ca::Angle angle) {
+  rotate(ca::fromAxisAngle(axis, angle));
+}
+
+void Camera::rotate(const ca::Quaternion& orientation) {
+  m_orientation = normalize(orientation * m_orientation);
+
+  updateViewMatrix();
 }
 
 ca::Ray Camera::createRay() const {
@@ -46,12 +61,13 @@ ca::Ray Camera::createRay() const {
 }
 
 ca::Ray Camera::createRayForMouse(const ca::Vec2& mousePosition) {
+#if 0
   ca::Mat4 cameraInverse = ca::inverse(m_projection);
 
   auto positionInWorldSpace =
       cameraInverse * ca::Vec4{mousePosition.x, mousePosition.y, 1.0f, 1.0f};
 
-  // positionInWorldSpace = ca::inverse(m_view) * positionInWorldSpace;
+  positionInWorldSpace = ca::inverse(m_view) * positionInWorldSpace;
 
 #if 0
   LOG(Info) << "mousePosition: " << mousePosition << ", m_position: " << m_position
@@ -60,6 +76,19 @@ ca::Ray Camera::createRayForMouse(const ca::Vec2& mousePosition) {
 
   return {m_position,
           ca::Vec3{positionInWorldSpace.x, positionInWorldSpace.y, positionInWorldSpace.z}};
+#endif  // 0
+
+  ca::Mat4 inverse = ca::inverse(m_projection * m_view);
+
+  ca::Vec3 nearPoint{mousePosition.x, mousePosition.y, -1.0f};
+  ca::Vec3 midPoint{mousePosition.x, mousePosition.y, 0.0f};
+
+  ca::Vec4 rayOrigin = inverse * ca::Vec4{nearPoint, 1.0f};
+  ca::Vec4 rayTarget = inverse * ca::Vec4{midPoint, 1.0f};
+
+  ca::Vec3 rayDirection = ca::normalize(rayTarget.xyz() - rayOrigin.xyz());
+
+  return {rayOrigin.xyz(), rayDirection};
 }
 
 void Camera::updateProjectionMatrix() {
@@ -68,6 +97,7 @@ void Camera::updateProjectionMatrix() {
 }
 
 void Camera::updateViewMatrix() {
+#if 0
   const F32 yawRadians = ca::degreesToRadians(m_yawDegrees);
   const F32 pitchRadians = ca::degreesToRadians(m_pitchDegrees);
 
@@ -80,4 +110,12 @@ void Camera::updateViewMatrix() {
   m_up = ca::crossProduct(m_right, m_forward);
 
   m_view = ca::inverse(ca::Mat4{m_right, m_up, -m_forward, m_position});
+#endif
+
+  ca::Mat3 rotationMatrix = m_orientation.toRotationMatrix();
+  ca::Mat4 viewMatrix{rotationMatrix};
+  //ca::Mat4 viewMatrix = ca::Mat4::identity;
+  viewMatrix.col[3] = ca::Vec4{m_position, 1.0f};
+
+  m_view = ca::inverse(viewMatrix);
 }

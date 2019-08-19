@@ -14,7 +14,7 @@ void CameraInputController::onMouseMoved(const ca::MouseEvent& event) {
 
     delta *= m_mouseSensitivity * -1.0f;
 
-    m_camera->rotateRelative(delta.x, delta.y);
+    // m_camera->rotateRelative(delta.x, delta.y);
 
     m_lastMousePosition = event.pos;
   }
@@ -102,5 +102,5 @@ void CameraInputController::tick(F32 delta) {
   auto rightMovement = m_camera->right() * m_moveDirection.x;
   auto upMovement = m_camera->up() * m_moveDirection.z;
 
-  m_camera->moveRelative((forwardMovement + rightMovement + upMovement) * kMovementSpeed * delta);
+  m_camera->move((forwardMovement + rightMovement + upMovement) * kMovementSpeed * delta);
 }

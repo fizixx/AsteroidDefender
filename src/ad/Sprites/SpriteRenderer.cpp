@@ -18,7 +18,7 @@ uniform mat4 uTexCoordsTransform;
 
 void main() {
   texCoords = (uTexCoordsTransform * vec4(inTexCoords, 0.0, 1.0)).xy;
-  gl_Position = uTransform * vec4(inPosition, 0.0, 1.0);
+  gl_Position = uTransform * vec4(inPosition, -0.5, 1.0);
 }
 )";
 
@@ -131,8 +131,6 @@ void SpriteRenderer::beginFrame(Camera* camera) {
 }
 
 void SpriteRenderer::renderSprite(Sprite* sprite, const ca::Vec2& position, F32 scale) {
-  // m_view = ca::translationMatrix({0.0f, 0.f, -100.0f});
-
   ca::Mat4 model = ca::translationMatrix(ca::Vec3{position, 0.0f}) * ca::scaleMatrix(scale);
   ca::Mat4 mvp = m_projection * m_view * model;
 
