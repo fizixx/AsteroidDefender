@@ -62,20 +62,13 @@ public:
   // forward direction.
   ca::Ray createRay() const;
 
-  // Create a ray that starts from the camera's current position and points towards a mouse pointer in clip
-  // space.
+  // Create a ray that starts from the camera's current position and points towards a mouse pointer
+  // in clip space.
   // NOTE: The mouse position should be in the range: [-1.0f..1.0f]
   ca::Ray createRayForMouse(const ca::Vec2& mousePosition);
 
-  // Return the current projection matrix of the camera.
-  const ca::Mat4& projectionMatrix() const {
-    return m_projection;
-  }
-
-  // Return the current view amtrix of the camera.
-  const ca::Mat4& viewMatrix() const {
-    return m_view;
-  }
+  void updateProjectionMatrix(ca::Mat4* projectionMatrix);
+  void updateViewMatrix(ca::Mat4* viewMatrix);
 
 private:
   void updateProjectionMatrix();
@@ -94,12 +87,14 @@ private:
   ca::Quaternion m_orientation;
 
   // Basis vectors.
-  ca::Vec3 m_forward{0.0f, 0.0f, -1.0f};
   ca::Vec3 m_right{1.0f, 0.0f, 0.0f};
   ca::Vec3 m_up{0.0f, 1.0f, 0.0f};
+  ca::Vec3 m_forward{0.0f, 0.0f, -1.0f};
 
-  ca::Mat4 m_projection = ca::Mat4::identity;
-  ca::Mat4 m_view = ca::Mat4::identity;
+  U32 m_dirtyFlags = 0u;
+
+  ca::Mat4 m_projectionMatrix = ca::Mat4::identity;
+  ca::Mat4 m_viewMatrix = ca::Mat4::identity;
 };
 
 #endif  // CAMERA_H_

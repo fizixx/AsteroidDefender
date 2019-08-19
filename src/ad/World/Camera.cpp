@@ -2,8 +2,16 @@
 
 #include "canvas/Math/Intersection.h"
 #include "canvas/Math/Transform.h"
-#include "nucleus/Logging.h"
 #include "nucleus/Macros.h"
+
+namespace {
+
+enum class DirtyFlag : U32 {
+  Projection = 0x0001u,
+  View = 0x0002u,
+};
+
+}  // namespace
 
 Camera::Camera(const ca::Vec3& worldUp) : m_worldUp{ca::normalize(worldUp)} {
   updateProjectionMatrix();
@@ -17,13 +25,13 @@ void Camera::resize(const ca::Size& size) {
 void Camera::resize(const ca::Vec2& size) {
   m_size = size;
 
-  updateProjectionMatrix();
+  m_dirtyFlags |= static_cast<U32>(DirtyFlag::Projection);
 }
 
 void Camera::moveTo(const ca::Vec3& position) {
   m_position = position;
 
-  updateViewMatrix();
+  m_dirtyFlags |= static_cast<U32>(DirtyFlag::View);
 }
 
 void Camera::move(const ca::Vec3& offset) {
@@ -37,13 +45,13 @@ void Camera::yaw(ca::Angle angle) {
 void Camera::pitch(ca::Angle angle) {
   rotate(m_orientation * ca::Vec3::right, angle);
 
-  updateViewMatrix();
+  m_dirtyFlags |= static_cast<U32>(DirtyFlag::View);
 }
 
 void Camera::roll(ca::Angle angle) {
   rotate(m_orientation * ca::Vec3::forward, angle);
 
-  updateViewMatrix();
+  m_dirtyFlags |= static_cast<U32>(DirtyFlag::View);
 }
 
 void Camera::rotate(const ca::Vec3& axis, ca::Angle angle) {
@@ -53,7 +61,7 @@ void Camera::rotate(const ca::Vec3& axis, ca::Angle angle) {
 void Camera::rotate(const ca::Quaternion& orientation) {
   m_orientation = normalize(orientation * m_orientation);
 
-  updateViewMatrix();
+  m_dirtyFlags |= static_cast<U32>(DirtyFlag::View);
 }
 
 ca::Ray Camera::createRay() const {
@@ -61,39 +69,38 @@ ca::Ray Camera::createRay() const {
 }
 
 ca::Ray Camera::createRayForMouse(const ca::Vec2& mousePosition) {
-#if 0
-  ca::Mat4 cameraInverse = ca::inverse(m_projection);
-
-  auto positionInWorldSpace =
-      cameraInverse * ca::Vec4{mousePosition.x, mousePosition.y, 1.0f, 1.0f};
-
-  positionInWorldSpace = ca::inverse(m_view) * positionInWorldSpace;
-
-#if 0
-  LOG(Info) << "mousePosition: " << mousePosition << ", m_position: " << m_position
-            << ", positionInWorldSpace: " << positionInWorldSpace;
-#endif
-
-  return {m_position,
-          ca::Vec3{positionInWorldSpace.x, positionInWorldSpace.y, positionInWorldSpace.z}};
-#endif  // 0
-
-  ca::Mat4 inverse = ca::inverse(m_projection * m_view);
+  ca::Mat4 inverseProjection = ca::inverse(m_projectionMatrix);
+  ca::Mat4 inverseView = ca::inverse(m_viewMatrix);
 
   ca::Vec3 nearPoint{mousePosition.x, mousePosition.y, -1.0f};
   ca::Vec3 midPoint{mousePosition.x, mousePosition.y, 0.0f};
 
-  ca::Vec4 rayOrigin = inverse * ca::Vec4{nearPoint, 1.0f};
-  ca::Vec4 rayTarget = inverse * ca::Vec4{midPoint, 1.0f};
+  ca::Vec4 rayOrigin = inverseView * inverseProjection * ca::Vec4{nearPoint, 1.0f};
+  ca::Vec4 rayTarget = inverseView * inverseProjection * ca::Vec4{midPoint, 1.0f};
 
   ca::Vec3 rayDirection = ca::normalize(rayTarget.xyz() - rayOrigin.xyz());
 
   return {rayOrigin.xyz(), rayDirection};
 }
 
+void Camera::updateProjectionMatrix(ca::Mat4* projectionMatrix) {
+  if (m_dirtyFlags & static_cast<U32>(DirtyFlag::Projection)) {
+    updateProjectionMatrix();
+  }
+
+  *projectionMatrix = m_projectionMatrix;
+}
+
+void Camera::updateViewMatrix(ca::Mat4* viewMatrix) {
+  if (m_dirtyFlags & static_cast<U32>(DirtyFlag::View)) {
+    updateViewMatrix();
+  }
+  *viewMatrix = m_viewMatrix;
+}
+
 void Camera::updateProjectionMatrix() {
   const F32 aspectRatio = m_size.x / m_size.y;
-  m_projection = ca::perspectiveProjection(45.0f, aspectRatio, 0.1f, 1000.0f);
+  m_projectionMatrix = ca::perspectiveProjection(45.0f, aspectRatio, 0.1f, 1000.0f);
 }
 
 void Camera::updateViewMatrix() {
@@ -113,9 +120,10 @@ void Camera::updateViewMatrix() {
 #endif
 
   ca::Mat3 rotationMatrix = m_orientation.toRotationMatrix();
-  ca::Mat4 viewMatrix{rotationMatrix};
-  //ca::Mat4 viewMatrix = ca::Mat4::identity;
-  viewMatrix.col[3] = ca::Vec4{m_position, 1.0f};
+  ca::Mat4 viewMatrix{ca::transpose(rotationMatrix)};
+  // ca::Mat4 viewMatrix = ca::Mat4::identity;
+  viewMatrix.col[3] = ca::Vec4{-m_position, 1.0f};
 
-  m_view = ca::inverse(viewMatrix);
+  // m_view = ca::inverse(viewMatrix);
+  m_viewMatrix = viewMatrix;
 }

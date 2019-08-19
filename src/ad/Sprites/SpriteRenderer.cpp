@@ -126,8 +126,8 @@ ca::Vec2 SpriteRenderer::convertDeviceCoordinatesToWorldCoordinates(ca::Pos pos)
 }
 
 void SpriteRenderer::beginFrame(Camera* camera) {
-  m_projection = camera->projectionMatrix();
-  m_view = camera->viewMatrix();
+  camera->updateProjectionMatrix(&m_projection);
+  camera->updateViewMatrix(&m_view);
 }
 
 void SpriteRenderer::renderSprite(Sprite* sprite, const ca::Vec2& position, F32 scale) {

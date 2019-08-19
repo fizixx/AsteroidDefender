@@ -29,7 +29,7 @@ bool World::initialize(hi::ResourceManager* resourceManager) {
 }
 
 void World::setCursorPosition(const ca::Vec2& position) {
-  LOG(Info) << "new cursor position: " << position;
+  // LOG(Info) << "new cursor position: " << position;
   m_cursorPosition = position;
 }
 
