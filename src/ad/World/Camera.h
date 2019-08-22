@@ -28,32 +28,28 @@ public:
   // Increase the camera's position by the given `offset`.
   void move(const ca::Vec3& offset);
 
-  // Rotation
-
-  // Increase the camera's current yaw/pitch/roll by the given `angle`.
-  void yaw(ca::Angle angle);
-  void pitch(ca::Angle angle);
-  void roll(ca::Angle angle);
+  // Set the absolute orientation of the camera.
+  void setRotation(const ca::Quaternion& orientation);
 
   // Increase the camera's orientation by the given `angle` around the given `axis`.
-  void rotate(const ca::Vec3& axis, ca::Angle angle);
+  void rotateBy(const ca::Vec3& axis, ca::Angle angle);
 
   // Increase the camera's orientation by the given `orientation`.
-  void rotate(const ca::Quaternion& orientation);
+  void rotateBy(const ca::Quaternion& orientation);
 
   // Return the camera's current forward vector.
-  const ca::Vec3& forward() const {
-    return m_forward;
+  ca::Vec3 forward() const {
+    return m_viewMatrix.col[2].xyz();
   }
 
   // Return the camera's current right vector.
-  const ca::Vec3& right() const {
-    return m_right;
+  ca::Vec3 right() const {
+    return m_viewMatrix.col[0].xyz();
   }
 
   // Return the camera's current up vector.
-  const ca::Vec3& up() const {
-    return m_up;
+  ca::Vec3 up() const {
+    return m_viewMatrix.col[1].xyz();
   }
 
   // Rays
@@ -71,6 +67,9 @@ public:
   void updateViewMatrix(ca::Mat4* viewMatrix);
 
 private:
+  void invalidateProjection();
+  void invalidateView();
+
   void updateProjectionMatrix();
   void updateViewMatrix();
 
@@ -87,9 +86,9 @@ private:
   ca::Quaternion m_orientation;
 
   // Basis vectors.
-  ca::Vec3 m_right{1.0f, 0.0f, 0.0f};
-  ca::Vec3 m_up{0.0f, 1.0f, 0.0f};
-  ca::Vec3 m_forward{0.0f, 0.0f, -1.0f};
+  ca::Vec3 m_rightVector{1.0f, 0.0f, 0.0f};
+  ca::Vec3 m_upVector{0.0f, 1.0f, 0.0f};
+  ca::Vec3 m_forwardVector{0.0f, 0.0f, -1.0f};
 
   U32 m_dirtyFlags = 0u;
 

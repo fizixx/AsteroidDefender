@@ -18,7 +18,7 @@ uniform mat4 uTexCoordsTransform;
 
 void main() {
   texCoords = (uTexCoordsTransform * vec4(inTexCoords, 0.0, 1.0)).xy;
-  gl_Position = uTransform * vec4(inPosition, -0.5, 1.0);
+  gl_Position = uTransform * vec4(inPosition, 0.0, 1.0);
 }
 )";
 
@@ -116,7 +116,8 @@ void SpriteRenderer::resize(const ca::Size& size) {
   m_projection =
       ca::orthographicProjection(-halfWidth, halfWidth, -halfHeight, halfHeight, -1.0f, 1.0f);
 #else
-  m_projection = ca::perspectiveProjection(60.0f, halfWidth / halfHeight, 0.1f, 1000.0f);
+  m_projection =
+      ca::perspectiveProjection(ca::degrees(45.0f), halfWidth / halfHeight, 0.1f, 1000.0f);
 #endif
 }
 

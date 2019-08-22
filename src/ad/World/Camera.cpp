@@ -25,66 +25,61 @@ void Camera::resize(const ca::Size& size) {
 void Camera::resize(const ca::Vec2& size) {
   m_size = size;
 
-  m_dirtyFlags |= static_cast<U32>(DirtyFlag::Projection);
+  invalidateProjection();
 }
 
 void Camera::moveTo(const ca::Vec3& position) {
   m_position = position;
 
-  m_dirtyFlags |= static_cast<U32>(DirtyFlag::View);
+  invalidateView();
 }
 
 void Camera::move(const ca::Vec3& offset) {
   moveTo(m_position + offset);
 }
 
-void Camera::yaw(ca::Angle angle) {
-  rotate(m_orientation * ca::Vec3::up, angle);
+void Camera::setRotation(const ca::Quaternion& orientation) {
+  m_orientation = orientation;
+
+  invalidateView();
 }
 
-void Camera::pitch(ca::Angle angle) {
-  rotate(m_orientation * ca::Vec3::right, angle);
-
-  m_dirtyFlags |= static_cast<U32>(DirtyFlag::View);
+void Camera::rotateBy(const ca::Vec3& axis, ca::Angle angle) {
+  rotateBy(ca::fromAxisAngle(axis, angle));
 }
 
-void Camera::roll(ca::Angle angle) {
-  rotate(m_orientation * ca::Vec3::forward, angle);
+void Camera::rotateBy(const ca::Quaternion& orientation) {
+  m_orientation = orientation * m_orientation;
 
-  m_dirtyFlags |= static_cast<U32>(DirtyFlag::View);
-}
-
-void Camera::rotate(const ca::Vec3& axis, ca::Angle angle) {
-  rotate(ca::fromAxisAngle(axis, angle));
-}
-
-void Camera::rotate(const ca::Quaternion& orientation) {
-  m_orientation = normalize(orientation * m_orientation);
-
-  m_dirtyFlags |= static_cast<U32>(DirtyFlag::View);
+  invalidateView();
 }
 
 ca::Ray Camera::createRay() const {
-  return {m_position, m_forward};
+  return {m_position, m_forwardVector};
 }
 
 ca::Ray Camera::createRayForMouse(const ca::Vec2& mousePosition) {
-  ca::Mat4 inverseProjection = ca::inverse(m_projectionMatrix);
-  ca::Mat4 inverseView = ca::inverse(m_viewMatrix);
+  updateProjectionMatrix();
+  updateViewMatrix();
 
-  ca::Vec3 nearPoint{mousePosition.x, mousePosition.y, -1.0f};
-  ca::Vec3 midPoint{mousePosition.x, mousePosition.y, 0.0f};
+  ca::Mat4 inverseVP = ca::inverse(m_projectionMatrix * m_viewMatrix);
 
-  ca::Vec4 rayOrigin = inverseView * inverseProjection * ca::Vec4{nearPoint, 1.0f};
-  ca::Vec4 rayTarget = inverseView * inverseProjection * ca::Vec4{midPoint, 1.0f};
+  F32 nx = (2.0f * mousePosition.x / m_size.x) - 1.0f;
+  F32 ny = 1.0f - (2.0f * mousePosition.y / m_size.y);
 
-  ca::Vec3 rayDirection = ca::normalize(rayTarget.xyz() - rayOrigin.xyz());
+  ca::Vec4 rayOrigin = inverseVP * ca::Vec4{nx, ny, -1.f, 1.0f};
+  ca::Vec4 rayTarget = inverseVP * ca::Vec4{nx, ny, 0.0f, 1.0f};
 
-  return {rayOrigin.xyz(), rayDirection};
+  LOG(Info) << "rayOrigin = " << rayOrigin << ", rayTarget = " << rayTarget;
+
+  ca::Vec4 rayDirection = rayTarget - rayOrigin;
+
+  return ca::Ray{rayOrigin.xyz(), ca::normalize(rayDirection.xyz())};
 }
 
 void Camera::updateProjectionMatrix(ca::Mat4* projectionMatrix) {
   if (m_dirtyFlags & static_cast<U32>(DirtyFlag::Projection)) {
+    m_dirtyFlags &= ~static_cast<U32>(DirtyFlag::Projection);
     updateProjectionMatrix();
   }
 
@@ -93,37 +88,26 @@ void Camera::updateProjectionMatrix(ca::Mat4* projectionMatrix) {
 
 void Camera::updateViewMatrix(ca::Mat4* viewMatrix) {
   if (m_dirtyFlags & static_cast<U32>(DirtyFlag::View)) {
+    m_dirtyFlags &= ~static_cast<U32>(DirtyFlag::View);
     updateViewMatrix();
   }
+
   *viewMatrix = m_viewMatrix;
+}
+
+void Camera::invalidateProjection() {
+  m_dirtyFlags |= static_cast<U32>(DirtyFlag::Projection);
+}
+
+void Camera::invalidateView() {
+  m_dirtyFlags |= static_cast<U32>(DirtyFlag::View);
 }
 
 void Camera::updateProjectionMatrix() {
   const F32 aspectRatio = m_size.x / m_size.y;
-  m_projectionMatrix = ca::perspectiveProjection(45.0f, aspectRatio, 0.1f, 1000.0f);
+  m_projectionMatrix = ca::perspectiveProjection(ca::degrees(45.0f), aspectRatio, 0.1f, 1000.0f);
 }
 
 void Camera::updateViewMatrix() {
-#if 0
-  const F32 yawRadians = ca::degreesToRadians(m_yawDegrees);
-  const F32 pitchRadians = ca::degreesToRadians(m_pitchDegrees);
-
-  m_forward = ca::Vec3{
-      ca::cosine(pitchRadians) * ca::sine(yawRadians),
-      ca::sine(pitchRadians),
-      ca::cosine(pitchRadians) * ca::cosine(yawRadians),
-  };
-  m_right = ca::crossProduct(m_forward, m_worldUp);
-  m_up = ca::crossProduct(m_right, m_forward);
-
-  m_view = ca::inverse(ca::Mat4{m_right, m_up, -m_forward, m_position});
-#endif
-
-  ca::Mat3 rotationMatrix = m_orientation.toRotationMatrix();
-  ca::Mat4 viewMatrix{ca::transpose(rotationMatrix)};
-  // ca::Mat4 viewMatrix = ca::Mat4::identity;
-  viewMatrix.col[3] = ca::Vec4{-m_position, 1.0f};
-
-  // m_view = ca::inverse(viewMatrix);
-  m_viewMatrix = viewMatrix;
+  m_viewMatrix = ca::createViewMatrix(m_position, m_orientation);
 }

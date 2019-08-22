@@ -4,6 +4,7 @@
 #include "ad/World/World.h"
 #include "canvas/App.h"
 #include "canvas/Math/Intersection.h"
+#include "canvas/Math/Transform.h"
 #include "canvas/Renderer/LineRenderer.h"
 #include "elastic/Context.h"
 #include "elastic/Views/LabelView.h"
@@ -68,7 +69,7 @@ public:
 
     m_worldCamera.moveTo({0.0f, 0.0f, 50.0f});
     // m_worldCamera.yaw(ca::Angle::fromDegrees(90.0f));
-    m_worldCamera.yaw(ca::Angle::fromDegrees(0.0f));
+    // m_worldCamera.yaw(ca::Angle::fromDegrees(0.0f));
     m_debugCamera.moveTo(m_worldCamera.position());
     // m_debugCamera.rotate(180.0f, 0.0f);
 
@@ -143,13 +144,6 @@ public:
   }
 
   void tick(F32 delta) override {
-    // static F32 angle = 0.0f;
-    // ca::Angle a = ca::Angle::fromDegrees(angle);
-    // a += 1.0f;
-
-    // m_worldCamera.yaw(a);
-
-
     if (m_useDebugCamera) {
       m_debugCameraInputController.tick(delta);
     } else {
@@ -157,13 +151,10 @@ public:
     }
 
     {
-#if 1
-      F32 mouseX = (m_currentMousePosition.x / m_screenSize.x * 2.0f) - 1.0f;
-      F32 mouseY = 1.0f - (m_currentMousePosition.y / m_screenSize.y * 2.0f);
-      m_ray = m_worldCamera.createRayForMouse({mouseX, mouseY});
-#else
-      m_ray = m_worldCamera.createRay();
-#endif
+      m_ray = m_worldCamera.createRayForMouse(m_currentMousePosition);
+
+      LOG(Info) << "origin = " << m_ray.origin << ", direction = " << m_ray.direction;
+
       ca::Plane worldPlane{{0.0f, 0.0f, 1.0f}, 0.0f};
       auto result = ca::intersection(worldPlane, m_ray);
       m_world.setCursorPosition({result.position.x, result.position.y});

@@ -25,9 +25,13 @@ private:
 
   // The camera we are controlling.
   Camera* m_camera;
-  
+
   // The speed at which the camera on mouse movement.
   F32 m_mouseSensitivity;
+
+  // Keep track of the current pitch and yaw values that we pass to the camera.
+  F32 m_yaw = 0.0f;
+  F32 m_pitch = 0.0f;
 
   ca::Vec3 m_moveDirection{0.0f, 0.0f, 0.0f};
 

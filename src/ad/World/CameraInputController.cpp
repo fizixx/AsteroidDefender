@@ -12,11 +12,11 @@ void CameraInputController::onMouseMoved(const ca::MouseEvent& event) {
         static_cast<F32>(event.pos.y - m_lastMousePosition.y),
     };
 
-    delta *= m_mouseSensitivity * -1.0f;
+    m_yaw += -delta.x * m_mouseSensitivity;
+    m_pitch += -delta.y * m_mouseSensitivity;
 
-    // m_camera->rotateRelative(delta.x, delta.y);
-    m_camera->yaw(ca::degrees(delta.x));
-    m_camera->pitch(ca::degrees(delta.y));
+    m_camera->setRotation(ca::Quaternion::fromEulerAngles(ca::degrees(m_pitch), ca::degrees(m_yaw),
+                                                          ca::degrees(0.0f)));
 
     m_lastMousePosition = event.pos;
   }
