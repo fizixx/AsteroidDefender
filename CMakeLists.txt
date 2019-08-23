@@ -11,6 +11,9 @@ add_subdirectory(../hive hive)
 set(AsteroidDefender_SOURCE_FILES
     src/ad/App/AsteroidDefender.cpp
 
+    src/ad/Geometry/Geometry.h
+    src/ad/Geometry/Geometry.cpp
+
     src/ad/Sprites/Sprite.h
     src/ad/Sprites/SpriteConverter.cpp
     src/ad/Sprites/SpriteConverter.h

@@ -34,11 +34,11 @@ void Camera::moveTo(const ca::Vec3& position) {
   invalidateView();
 }
 
-void Camera::move(const ca::Vec3& offset) {
+void Camera::moveBy(const ca::Vec3& offset) {
   moveTo(m_position + offset);
 }
 
-void Camera::setRotation(const ca::Quaternion& orientation) {
+void Camera::rotateTo(const ca::Quaternion& orientation) {
   m_orientation = orientation;
 
   invalidateView();
@@ -70,7 +70,7 @@ ca::Ray Camera::createRayForMouse(const ca::Vec2& mousePosition) {
   ca::Vec4 rayOrigin = inverseVP * ca::Vec4{nx, ny, -1.f, 1.0f};
   ca::Vec4 rayTarget = inverseVP * ca::Vec4{nx, ny, 0.0f, 1.0f};
 
-  LOG(Info) << "rayOrigin = " << rayOrigin << ", rayTarget = " << rayTarget;
+  // LOG(Info) << "rayOrigin = " << rayOrigin << ", rayTarget = " << rayTarget;
 
   ca::Vec4 rayDirection = rayTarget - rayOrigin;
 
@@ -105,9 +105,13 @@ void Camera::invalidateView() {
 
 void Camera::updateProjectionMatrix() {
   const F32 aspectRatio = m_size.x / m_size.y;
-  m_projectionMatrix = ca::perspectiveProjection(ca::degrees(45.0f), aspectRatio, 0.1f, 1000.0f);
+  m_projectionMatrix = ca::perspectiveProjection(ca::degrees(60.0f), aspectRatio, 0.1f, 1000.0f);
 }
 
 void Camera::updateViewMatrix() {
   m_viewMatrix = ca::createViewMatrix(m_position, m_orientation);
+
+  m_forwardVector = m_viewMatrix.col[2].xyz();
+  m_upVector = m_viewMatrix.col[1].xyz();
+  m_rightVector = m_viewMatrix.col[0].xyz();
 }

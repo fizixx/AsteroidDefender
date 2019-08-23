@@ -15,8 +15,8 @@ void CameraInputController::onMouseMoved(const ca::MouseEvent& event) {
     m_yaw += -delta.x * m_mouseSensitivity;
     m_pitch += -delta.y * m_mouseSensitivity;
 
-    m_camera->setRotation(ca::Quaternion::fromEulerAngles(ca::degrees(m_pitch), ca::degrees(m_yaw),
-                                                          ca::degrees(0.0f)));
+    m_camera->rotateTo(ca::Quaternion::fromEulerAngles(ca::degrees(m_pitch), ca::degrees(m_yaw),
+                                                       ca::degrees(0.0f)));
 
     m_lastMousePosition = event.pos;
   }
@@ -104,5 +104,5 @@ void CameraInputController::tick(F32 delta) {
   auto rightMovement = m_camera->right() * m_moveDirection.x;
   auto upMovement = m_camera->up() * m_moveDirection.z;
 
-  m_camera->move((forwardMovement + rightMovement + upMovement) * kMovementSpeed * delta);
+  m_camera->moveBy((forwardMovement + rightMovement + upMovement) * kMovementSpeed * delta);
 }

@@ -11,48 +11,51 @@
 
 class Camera {
 public:
-  explicit Camera(const ca::Vec3& worldUp = {0.0f, 1.0f, 0.0f});
+  // Construct the camera with a world up vector.  The default up vector is the positive Y axis.
+  explicit Camera(const ca::Vec3& worldUp = ca::Vec3::up);
 
   void resize(const ca::Size& size);
   void resize(const ca::Vec2& size);
 
-  // Position
-
+  // Get the current position of the camera in world space.
   const ca::Vec3& position() const {
     return m_position;
   }
 
-  // Move the camera to the given `position`.
+  // Move the camera to a fixed position in world space.
   void moveTo(const ca::Vec3& position);
 
-  // Increase the camera's position by the given `offset`.
-  void move(const ca::Vec3& offset);
+  // Move the camera from it's current position by the `offset` given in world space.
+  void moveBy(const ca::Vec3& offset);
 
-  // Set the absolute orientation of the camera.
-  void setRotation(const ca::Quaternion& orientation);
+  // Get the current orientation of the camera.
+  const ca::Quaternion& orientation() const {
+    return m_orientation;
+  }
 
-  // Increase the camera's orientation by the given `angle` around the given `axis`.
+  // Set the camera's orientation to a fixed value.
+  void rotateTo(const ca::Quaternion& orientation);
+
+  // Apply the given axis and angle rotation to the current orientation of the camera.
   void rotateBy(const ca::Vec3& axis, ca::Angle angle);
 
-  // Increase the camera's orientation by the given `orientation`.
+  // Apply the given orientation to the current orientation of the camera.
   void rotateBy(const ca::Quaternion& orientation);
 
   // Return the camera's current forward vector.
-  ca::Vec3 forward() const {
-    return m_viewMatrix.col[2].xyz();
+  const ca::Vec3& forward() const {
+    return m_forwardVector;
   }
 
   // Return the camera's current right vector.
-  ca::Vec3 right() const {
-    return m_viewMatrix.col[0].xyz();
+  const ca::Vec3& right() const {
+    return m_rightVector;
   }
 
   // Return the camera's current up vector.
-  ca::Vec3 up() const {
-    return m_viewMatrix.col[1].xyz();
+  const ca::Vec3& up() const {
+    return m_upVector;
   }
-
-  // Rays
 
   // Create a ray that starts from the camera's current position and points towards the camera
   // forward direction.
@@ -63,6 +66,7 @@ public:
   // NOTE: The mouse position should be in the range: [-1.0f..1.0f]
   ca::Ray createRayForMouse(const ca::Vec2& mousePosition);
 
+  // Update the given matrices with our projection and view matrices respectively.
   void updateProjectionMatrix(ca::Mat4* projectionMatrix);
   void updateViewMatrix(ca::Mat4* viewMatrix);
 
@@ -76,20 +80,21 @@ private:
   // The size and of the viewport we're rendering to.
   ca::Vec2 m_size{1.0f, 1.0f};
 
-  // The up vector for world space.
+  // The up vector of the world.
   ca::Vec3 m_worldUp;
 
-  // The position of the camera in world space.
+  // The current position of the camera in world space.
   ca::Vec3 m_position{0.0f, 0.0f, 0.0f};
 
-  // Rotation angles.
-  ca::Quaternion m_orientation;
+  // The current orientation of the camera.
+  ca::Quaternion m_orientation = ca::Quaternion::identity;
 
   // Basis vectors.
-  ca::Vec3 m_rightVector{1.0f, 0.0f, 0.0f};
-  ca::Vec3 m_upVector{0.0f, 1.0f, 0.0f};
-  ca::Vec3 m_forwardVector{0.0f, 0.0f, -1.0f};
+  ca::Vec3 m_rightVector = ca::Vec3::right;
+  ca::Vec3 m_upVector = ca::Vec3::up;
+  ca::Vec3 m_forwardVector = ca::Vec3::forward;
 
+  // Flags set to know which matrix needs updating.
   U32 m_dirtyFlags = 0u;
 
   ca::Mat4 m_projectionMatrix = ca::Mat4::identity;

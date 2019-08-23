@@ -1,3 +1,4 @@
+#include "ad/Geometry/Geometry.h"
 #include "ad/Sprites/SpriteConverter.h"
 #include "ad/Sprites/SpriteRenderer.h"
 #include "ad/World/CameraInputController.h"
@@ -5,12 +6,14 @@
 #include "canvas/App.h"
 #include "canvas/Math/Intersection.h"
 #include "canvas/Math/Transform.h"
+#include "canvas/OpenGL.h"
 #include "canvas/Renderer/LineRenderer.h"
 #include "elastic/Context.h"
 #include "elastic/Views/LabelView.h"
 #include "hive/PhysicalResourceLocator.h"
 #include "hive/ResourceManager.h"
 #include "nucleus/Streams/FileInputStream.h"
+#include "nucleus/Streams/WrappedMemoryInputStream.h"
 
 void drawCross(ca::LineRenderer* lineRenderer, const ca::Vec3& position, const ca::Color& color,
                F32 scale = 1.0f) {
@@ -21,6 +24,33 @@ void drawCross(ca::LineRenderer* lineRenderer, const ca::Vec3& position, const c
   lineRenderer->renderLine(position - ca::Vec3{0.0f, 0.0f, 1.0f} * scale,
                            position + ca::Vec3{0.0f, 0.0f, 1.0f} * scale, color);
 }
+
+const I8* kCubeVertexShaderSource = R"(
+#version 330
+
+layout(location = 0) in vec3 inPosition;
+layout(location = 1) in vec4 inColor;
+
+uniform mat4 uTransform;
+
+out vec4 vColor;
+
+void main() {
+  gl_Position = uTransform * vec4(inPosition, 1.0);
+  vColor = inColor;
+}
+)";
+
+const I8* kCubeFragmentShaderSource = R"(
+#version 330
+
+in vec4 vColor;
+out vec4 final;
+
+void main() {
+  final = vec4(vColor.xyz, 1.0);
+}
+)";
 
 class AsteroidDefender : public ca::WindowDelegate {
 public:
@@ -35,6 +65,23 @@ public:
 
     ca::Renderer* renderer = window->getRenderer();
     m_lineRenderer.initialize(renderer);
+
+    m_cube.geometry = createCube(renderer);
+    if (!isValid(m_cube.geometry.vertexBufferId)) {
+      return false;
+    }
+
+    nu::WrappedMemoryInputStream vertexStream{kCubeVertexShaderSource,
+                                              nu::StringView{kCubeVertexShaderSource}.getLength()};
+    auto vss = ca::ShaderSource::from(&vertexStream);
+
+    nu::WrappedMemoryInputStream fragmentStream{
+        kCubeFragmentShaderSource, nu::StringView{kCubeFragmentShaderSource}.getLength()};
+    auto fss = ca::ShaderSource::from(&fragmentStream);
+
+    m_cube.programId = renderer->createProgram(vss, fss);
+
+    m_cube.transformUniformId = renderer->createUniform("uTransform");
 
     auto assetsPath = nu::getCurrentWorkingDirectory() / "assets";
     LOG(Info) << "Assets path: " << assetsPath.getPath();
@@ -114,7 +161,7 @@ public:
   }
 
   void onMouseWheel(const ca::MouseWheelEvent& evt) override {
-    m_worldCamera.move({0.0f, 0.0f, -evt.wheelOffset.y * 10.0f});
+    m_worldCamera.moveBy({0.0f, 0.0f, -evt.wheelOffset.y * 10.0f});
   }
 
   void onKeyPressed(const ca::KeyEvent& evt) override {
@@ -153,7 +200,7 @@ public:
     {
       m_ray = m_worldCamera.createRayForMouse(m_currentMousePosition);
 
-      LOG(Info) << "origin = " << m_ray.origin << ", direction = " << m_ray.direction;
+      // LOG(Info) << "origin = " << m_ray.origin << ", direction = " << m_ray.direction;
 
       ca::Plane worldPlane{{0.0f, 0.0f, 1.0f}, 0.0f};
       auto result = ca::intersection(worldPlane, m_ray);
@@ -167,54 +214,67 @@ public:
     m_lineRenderer.beginFrame();
     m_spriteRenderer.beginFrame(m_useDebugCamera ? &m_debugCamera : &m_worldCamera);
 
+    drawCross(&m_lineRenderer, ca::Vec3::zero, ca::Color::red, 100.0f);
+
     m_world.render(&m_spriteRenderer);
 
-    //    m_lineRenderer.renderLine({0.0f, 0.0f, 0.0f}, m_worldCamera.position(), ca::Color::blue);
-    //    m_lineRenderer.renderLine(m_ray.origin, m_ray.origin + m_ray.direction * 100.0f,
-    //                              ca::Color::red);
-    //    m_lineRenderer.renderLine(m_worldCamera.position(),
-    //                              m_worldCamera.position() + ca::Vec3{1000.0f, 1000.0f, -1000.0f},
-    //                              ca::Color::white);
-    //    m_lineRenderer.renderLine(m_worldCamera.position(),
-    //                              m_worldCamera.position() + ca::Vec3{1000.0f, -1000.0f,
-    //                              -1000.0f}, ca::Color::white);
-    //    m_lineRenderer.renderLine(m_worldCamera.position(),
-    //                              m_worldCamera.position() + ca::Vec3{-1000.0f, -1000.0f,
-    //                              -1000.0f}, ca::Color::white);
-    //    m_lineRenderer.renderLine(m_worldCamera.position(),
-    //                              m_worldCamera.position() + ca::Vec3{-1000.0f, 1000.0f,
-    //                              -1000.0f}, ca::Color::white);
+    glEnable(GL_DEPTH_TEST);
+    {
+      static ca::Angle yRotation{ca::degrees(45.0f)};
+      // yRotation += 1.0f;
 
-    //    m_lineRenderer.renderLine({0.0f, 0.0f, 0.0f}, {1000.0f, 1000.0f, -1000.0f},
-    //    ca::Color::red); m_lineRenderer.renderLine({0.0f, 0.0f, 0.0f}, {800.0f, 800.0f, -800.0f},
-    //    ca::Color::blue);
+      static ca::Angle yView = ca::degrees(0.0f);
+      static F32 delta = 1.0f;
+      yView += ca::degrees(delta);
+      if (yView.degrees() > 100.0f || yView.degrees() < -100.0f) {
+        delta *= -1.0f;
+      }
 
-    // drawCross(&m_lineRenderer, m_worldCamera.position(), ca::Color::white);
-    // drawCross(&m_lineRenderer, m_ray.origin + m_ray.direction, ca::Color::red);
-    // drawCross(&m_lineRenderer, {0.0f, 0.0f, 0.0f}, ca::Color::white, 0.5f);
+      ca::UniformBuffer uniforms;
 
-    // ca::Vec3 mPos{0.99999f, 0.99999f, -0.99999f};
-    // drawCross(&m_lineRenderer, mPos, ca::Color::blue);
+      ca::Mat4 projection = ca::perspectiveProjection(ca::degrees(120.0f), 1.0f, 0.1f, 50.0f);
 
-#if 0
+      ca::Quaternion viewOrientation{
+          ca::Quaternion::fromEulerAngles(ca::Angle::zero, yView, ca::Angle::zero)};
+      ca::Mat4 view = ca::createViewMatrix({0.0f, 0.0f, 10.0f}, viewOrientation);
 
-    m_lineRenderer.render(ca::Mat4::identity);
+      {
+        ca::Mat4 modelTranslation = ca::translationMatrix({0.5f, 0.0f, -2.0f});
+        ca::Quaternion orientation =
+            ca::Quaternion::fromEulerAngles(ca::degrees(0.0f), yRotation, ca::degrees(0.0f));
+        ca::Mat4 modelRotation{orientation.toRotationMatrix()};
+        ca::Mat4 modelScale = ca::scaleMatrix(0.5f);
 
-    m_lineRenderer.beginFrame();
+        ca::Mat4 model = ca::createModelMatrix(modelTranslation, modelRotation, modelScale);
 
-    auto inv = ca::inverse(m_worldCamera.viewMatrix() * m_worldCamera.projectionMatrix());
-    auto newPos = ca::Vec4{mPos, 1.0f} * inv;
-    LOG(Info) << "newPos = " << newPos;
-    drawCross(&m_lineRenderer, {newPos.x, newPos.y, newPos.z}, ca::Color::green);
+        ca::Mat4 transform = projection * view * model;
 
-#if 1
-    ca::Mat4 debugTransform = m_debugCamera.projectionMatrix() * m_debugCamera.viewMatrix();
-    ca::Mat4 worldTransform = m_worldCamera.projectionMatrix() * m_worldCamera.viewMatrix();
-    auto transform = m_useDebugCamera ? debugTransform : worldTransform;
+        uniforms.set(m_cube.transformUniformId, transform);
+        renderGeometry(renderer, m_cube.geometry, m_cube.programId, uniforms);
+      }
 
-    m_lineRenderer.render(transform);
-#endif  // 0
-#endif
+      {
+        ca::Mat4 modelTranslation = ca::translationMatrix({-0.5f, 0.0f, -2.0f});
+        ca::Mat4 modelRotation = ca::rotationMatrix(ca::Vec3::up, yRotation);
+        ca::Mat4 modelScale = ca::scaleMatrix(0.5f);
+
+        ca::Mat4 model = ca::createModelMatrix(modelTranslation, modelRotation, modelScale);
+
+        ca::Mat4 transform = projection * view * model;
+
+        uniforms.set(m_cube.transformUniformId, transform);
+        renderGeometry(renderer, m_cube.geometry, m_cube.programId, uniforms);
+      }
+    }
+    glDisable(GL_DEPTH_TEST);
+
+    {
+      ca::Mat4 projection = ca::Mat4::identity;
+      ca::Mat4 view = ca::Mat4::identity;
+      m_worldCamera.updateProjectionMatrix(&projection);
+      m_worldCamera.updateViewMatrix(&view);
+      m_lineRenderer.render(projection * view);
+    }
 
     m_ui.render(renderer);
   }
@@ -245,6 +305,12 @@ private:
   SpriteRenderer m_spriteRenderer;
   Camera m_worldCamera;
   World m_world;
+
+  struct {
+    Geometry geometry;
+    ca::ProgramId programId;
+    ca::UniformId transformUniformId;
+  } m_cube;
 
   bool m_useDebugCamera = false;
   Camera m_debugCamera;
