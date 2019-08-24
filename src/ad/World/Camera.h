@@ -11,6 +11,9 @@
 
 class Camera {
 public:
+  static ca::Vec2 convertScreenPositionToClipSpace(const ca::Pos& mousePosition,
+                                                   const ca::Size& screenSize);
+
   // Construct the camera with a world up vector.  The default up vector is the positive Y axis.
   explicit Camera(ca::Angle fieldOfView = ca::degrees(45.0f),
                   const ca::Vec3& worldUp = ca::Vec3::up);

@@ -13,6 +13,15 @@ enum class DirtyFlag : U32 {
 
 }  // namespace
 
+// static
+ca::Vec2 Camera::convertScreenPositionToClipSpace(const ca::Pos& mousePosition,
+                                                  const ca::Size& screenSize) {
+  F32 x = (2.0f * static_cast<F32>(mousePosition.x) / static_cast<F32>(screenSize.width)) - 1.0f;
+  F32 y = 1.0f - (2.0f * static_cast<F32>(mousePosition.y) / static_cast<F32>(screenSize.height));
+
+  return {x, y};
+}
+
 Camera::Camera(ca::Angle fieldOfView, const ca::Vec3& worldUp)
   : m_fieldOfView{fieldOfView}, m_worldUp{ca::normalize(worldUp)} {
   updateProjectionMatrix();
@@ -75,23 +84,23 @@ ca::Ray Camera::createRay() const {
 }
 
 ca::Ray Camera::createRayForMouse(const ca::Vec2& mousePosition) {
+  DCHECK(mousePosition.x >= -1.0f && mousePosition.x <= 1.0f);
+  DCHECK(mousePosition.y >= -1.0f && mousePosition.y <= 1.0f);
+
   updateProjectionMatrix();
   updateViewMatrix();
 
   ca::Mat4 inverse = ca::inverse(m_projectionMatrix * m_viewMatrix);
 
-  F32 nx = (2.0f * mousePosition.x / m_size.x) - 1.0f;
-  F32 ny = 1.0f - (2.0f * mousePosition.y / m_size.y);
+  ca::Vec4 farPoint = inverse * ca::Vec4{mousePosition.x, mousePosition.y, -1.0f, 1.0f};
+  ca::Vec4 midPoint = inverse * ca::Vec4{mousePosition.x, mousePosition.y, 0.0f, 1.0f};
 
-  ca::Vec4 rayOrigin = inverse * ca::Vec4{nx, ny, -1.0f, 1.0f};
-  ca::Vec4 rayTarget = inverse * ca::Vec4{nx, ny, +1.0f, 1.0f};
+  farPoint /= farPoint.w;
+  midPoint /= midPoint.w;
 
-  rayOrigin /= rayOrigin.w;
-  rayTarget /= rayTarget.w;
+  ca::Vec4 rayDirection = midPoint - farPoint;
 
-  ca::Vec4 rayDirection = rayTarget - rayOrigin;
-
-  return ca::Ray{rayOrigin.xyz(), ca::normalize(rayDirection.xyz())};
+  return ca::Ray{farPoint.xyz(), ca::normalize(rayDirection.xyz())};
 }
 
 void Camera::updateProjectionMatrix(ca::Mat4* projectionMatrix) {

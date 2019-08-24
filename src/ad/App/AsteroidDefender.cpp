@@ -124,7 +124,7 @@ public:
   void onWindowResized(const ca::Size& size) override {
     WindowDelegate::onWindowResized(size);
 
-    m_screenSize = ca::Vec2{static_cast<F32>(size.width), static_cast<F32>(size.height)};
+    m_screenSize = size;
 
     m_worldCamera.resize(size);
     m_spriteRenderer.resize(size);
@@ -133,7 +133,7 @@ public:
 
   void onMouseMoved(const ca::MouseEvent& event) override {
     m_worldCameraInputController.onMouseMoved(event);
-    m_currentMousePosition = {static_cast<F32>(event.pos.x), static_cast<F32>(event.pos.y)};
+    m_currentMousePosition = event.pos;
   }
 
   bool onMousePressed(const ca::MouseEvent& event) override {
@@ -196,11 +196,10 @@ public:
                                  ca::degrees(m_fieldOfViewMovement * delta * 0.1f));
 
     {
-      m_ray = m_worldCamera.createRayForMouse(m_currentMousePosition);
+      m_ray = m_worldCamera.createRayForMouse(
+          Camera::convertScreenPositionToClipSpace(m_currentMousePosition, m_screenSize));
 
-      // LOG(Info) << "origin = " << m_ray.origin << ", direction = " << m_ray.direction;
-
-      ca::Plane worldPlane{{0.0f, 0.0f, 1.0f}, 0.0f};
+      ca::Plane worldPlane{-ca::Vec3::forward, 0.0f};
       auto result = ca::intersection(worldPlane, m_ray);
       m_world.setCursorPosition({result.position.x, result.position.y});
     }
@@ -263,11 +262,13 @@ public:
       drawCamera(renderer, finalMatrix, &m_worldCamera);
     }
 
-    {
-      ca::Ray mouseRay = m_worldCamera.createRayForMouse(m_currentMousePosition);
+    ca::Plane worldPlane{-ca::Vec3::forward, 0.0f};
 
-      ca::Plane p{-ca::Vec3::forward, 0.0f};
-      auto intersection = ca::intersection(p, mouseRay);
+    {
+      ca::Ray mouseRay = m_worldCamera.createRayForMouse(
+          Camera::convertScreenPositionToClipSpace(m_currentMousePosition, m_screenSize));
+
+      auto intersection = ca::intersection(worldPlane, mouseRay);
 
       drawCube(renderer, intersection.position, ca::Quaternion::identity, finalMatrix);
 
@@ -279,6 +280,9 @@ public:
       m_lineRenderer.renderLine(ca::Vec3::zero, p1, ca::Color::green);
       m_lineRenderer.renderLine(ca::Vec3::zero, p2, ca::Color::blue);
     }
+
+    m_lineRenderer.renderGrid(worldPlane, ca::Vec3::up, ca::Color{1.0f, 1.0f, 1.0f, 0.1f}, 20,
+                              1.0f);
 
     m_lineRenderer.render(finalMatrix);
 
@@ -390,10 +394,10 @@ private:
   ca::Ray m_ray;
 
   // Client size of the area we're rendering the world into:
-  ca::Vec2 m_screenSize{0.0f, 0.0f};
+  ca::Size m_screenSize;
 
   // Position of the cursor on the screen in range ([0..m_size.width], [0..m_size.height]}.
-  ca::Vec2 m_currentMousePosition{0.0f, 0.0f};
+  ca::Pos m_currentMousePosition;
 };
 
 CANVAS_APP(AsteroidDefender)
