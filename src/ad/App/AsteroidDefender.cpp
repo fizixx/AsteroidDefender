@@ -114,6 +114,8 @@ public:
       return false;
     }
 
+    m_debugCamera.setFarPlane(5000.0f);
+
     m_worldCamera.moveTo({0.0f, 0.0f, 25.0f});
     m_worldCamera.setNearPlane(10.0f);
     m_worldCamera.setFarPlane(100.0f);
@@ -126,7 +128,9 @@ public:
 
     m_screenSize = size;
 
-    m_worldCamera.resize(size);
+    m_debugCamera.setAspectRatio(Camera::aspectRatioFromScreenSize(m_screenSize));
+    m_worldCamera.setAspectRatio(Camera::aspectRatioFromScreenSize(m_screenSize));
+
     m_spriteRenderer.resize(size);
     m_ui.resize(size);
   }
@@ -220,17 +224,17 @@ public:
 
     // Projection
 
-    ca::Mat4 projection = ca::perspectiveProjection(ca::degrees(45.0f), 1.0f, 0.1f, 15000.0f);
+    ca::Mat4 projection = ca::Mat4::identity;
+    m_debugCamera.updateProjectionMatrix(&projection);
 
     // View (debug)
 
-    Camera debugCamera;
-    debugCamera.moveTo({-25.0f, 25.0f, 50.0f});
-    debugCamera.rotateTo(
+    m_debugCamera.moveTo({-25.0f, 25.0f, 50.0f});
+    m_debugCamera.rotateTo(
         ca::Quaternion::fromEulerAngles(ca::degrees(-30.0f), ca::degrees(-30.0f), ca::Angle::zero));
 
     ca::Mat4 viewDebug{ca::Mat4::identity};
-    debugCamera.updateViewMatrix(&viewDebug);
+    m_debugCamera.updateViewMatrix(&viewDebug);
 
     // Final matrix
 
@@ -390,6 +394,7 @@ private:
   CameraInputController m_worldCameraInputController{&m_worldCamera, 0.1f};
 
   bool m_useDebugCamera = true;
+  Camera m_debugCamera;
 
   ca::Ray m_ray;
 

@@ -22,19 +22,19 @@ ca::Vec2 Camera::convertScreenPositionToClipSpace(const ca::Pos& mousePosition,
   return {x, y};
 }
 
-Camera::Camera(ca::Angle fieldOfView, const ca::Vec3& worldUp)
-  : m_fieldOfView{fieldOfView}, m_worldUp{ca::normalize(worldUp)} {
+// static
+F32 Camera::aspectRatioFromScreenSize(const ca::Size& size) {
+  return (size.height > 0) ? static_cast<F32>(size.width) / static_cast<F32>(size.height) : 1.0f;
+}
+
+Camera::Camera(ca::Angle fieldOfView, F32 aspectRatio, const ca::Vec3& worldUp)
+  : m_fieldOfView{fieldOfView}, m_aspectRatio{aspectRatio}, m_worldUp{ca::normalize(worldUp)} {
   updateProjectionMatrix();
   updateViewMatrix();
 }
 
-void Camera::resize(const ca::Size& size) {
-  resize(ca::Vec2{static_cast<F32>(size.width), static_cast<F32>(size.height)});
-}
-
-void Camera::resize(const ca::Vec2& size) {
-  m_size = size;
-
+void Camera::setAspectRatio(F32 aspectRatio) {
+  m_aspectRatio = aspectRatio;
   invalidateProjection();
 }
 
@@ -130,9 +130,9 @@ void Camera::invalidateView() {
 }
 
 void Camera::updateProjectionMatrix() {
-  const F32 aspectRatio = m_size.x / m_size.y;
+  LOG(Info) << this << " == " << m_aspectRatio;
   m_projectionMatrix =
-      ca::perspectiveProjection(m_fieldOfView, aspectRatio, m_nearPlane, m_farPlane);
+      ca::perspectiveProjection(m_fieldOfView, m_aspectRatio, m_nearPlane, m_farPlane);
 }
 
 void Camera::updateViewMatrix() {

@@ -1,5 +1,5 @@
-#ifndef CAMERA_H_
-#define CAMERA_H_
+#ifndef AD_WORLD_CAMERA_H_
+#define AD_WORLD_CAMERA_H_
 
 #include "canvas/Math/Angle.h"
 #include "canvas/Math/Mat4.h"
@@ -11,15 +11,23 @@
 
 class Camera {
 public:
+  // Return clip space coordinates required for create a ray for mouse position.
   static ca::Vec2 convertScreenPositionToClipSpace(const ca::Pos& mousePosition,
                                                    const ca::Size& screenSize);
 
+  static F32 aspectRatioFromScreenSize(const ca::Size& size);
+
   // Construct the camera with a world up vector.  The default up vector is the positive Y axis.
-  explicit Camera(ca::Angle fieldOfView = ca::degrees(45.0f),
+  explicit Camera(ca::Angle fieldOfView = ca::degrees(45.0f), F32 aspectRatio = 1.0f,
                   const ca::Vec3& worldUp = ca::Vec3::up);
 
-  void resize(const ca::Size& size);
-  void resize(const ca::Vec2& size);
+  // Return the current aspect ratio.
+  F32 aspectRatio() const {
+    return m_aspectRatio;
+  }
+
+  // Set the camera's aspect ratio.
+  void setAspectRatio(F32 aspectRatio);
 
   // Return the near plane for the camera frustum.
   F32 nearPlane() const {
@@ -105,9 +113,6 @@ private:
   void updateProjectionMatrix();
   void updateViewMatrix();
 
-  // The size and of the viewport we're rendering to.
-  ca::Vec2 m_size{1.0f, 1.0f};
-
   // The up vector of the world.
   ca::Vec3 m_worldUp;
 
@@ -115,6 +120,8 @@ private:
   F32 m_farPlane = 100.0f;
 
   ca::Angle m_fieldOfView;
+
+  F32 m_aspectRatio = 1.0f;
 
   // The current position of the camera in world space.
   ca::Vec3 m_position{0.0f, 0.0f, 0.0f};
@@ -134,4 +141,4 @@ private:
   ca::Mat4 m_viewMatrix = ca::Mat4::identity;
 };
 
-#endif  // CAMERA_H_
+#endif  // AD_WORLD_CAMERA_H_
