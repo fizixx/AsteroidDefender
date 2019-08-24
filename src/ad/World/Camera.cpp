@@ -13,7 +13,8 @@ enum class DirtyFlag : U32 {
 
 }  // namespace
 
-Camera::Camera(const ca::Vec3& worldUp) : m_worldUp{ca::normalize(worldUp)} {
+Camera::Camera(ca::Angle fieldOfView, const ca::Vec3& worldUp)
+  : m_fieldOfView{fieldOfView}, m_worldUp{ca::normalize(worldUp)} {
   updateProjectionMatrix();
   updateViewMatrix();
 }
@@ -25,6 +26,21 @@ void Camera::resize(const ca::Size& size) {
 void Camera::resize(const ca::Vec2& size) {
   m_size = size;
 
+  invalidateProjection();
+}
+
+void Camera::setNearPlane(F32 nearPlane) {
+  m_nearPlane = nearPlane;
+  invalidateProjection();
+}
+
+void Camera::setFarPlane(F32 farPlane) {
+  m_farPlane = farPlane;
+  invalidateProjection();
+}
+
+void Camera::setFieldOfView(ca::Angle fieldOfView) {
+  m_fieldOfView = fieldOfView;
   invalidateProjection();
 }
 
@@ -105,13 +121,16 @@ void Camera::invalidateView() {
 
 void Camera::updateProjectionMatrix() {
   const F32 aspectRatio = m_size.x / m_size.y;
-  m_projectionMatrix = ca::perspectiveProjection(ca::degrees(60.0f), aspectRatio, 0.1f, 1000.0f);
+  m_projectionMatrix =
+      ca::perspectiveProjection(m_fieldOfView, aspectRatio, m_nearPlane, m_farPlane);
 }
 
 void Camera::updateViewMatrix() {
   m_viewMatrix = ca::createViewMatrix(m_position, m_orientation);
 
-  m_forwardVector = m_viewMatrix.col[2].xyz();
-  m_upVector = m_viewMatrix.col[1].xyz();
-  m_rightVector = m_viewMatrix.col[0].xyz();
+  ca::Mat4 t = ca::transpose(m_viewMatrix);
+
+  m_rightVector = t.col[0].xyz();
+  m_upVector = t.col[1].xyz();
+  m_forwardVector = -t.col[2].xyz();
 }

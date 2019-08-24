@@ -12,10 +12,35 @@
 class Camera {
 public:
   // Construct the camera with a world up vector.  The default up vector is the positive Y axis.
-  explicit Camera(const ca::Vec3& worldUp = ca::Vec3::up);
+  explicit Camera(ca::Angle fieldOfView = ca::degrees(45.0f),
+                  const ca::Vec3& worldUp = ca::Vec3::up);
 
   void resize(const ca::Size& size);
   void resize(const ca::Vec2& size);
+
+  // Return the near plane for the camera frustum.
+  F32 nearPlane() const {
+    return m_nearPlane;
+  }
+
+  // Set the near plane.
+  void setNearPlane(F32 nearPlane);
+
+  // Return the far plane for the camera frustum.
+  F32 farPlane() const {
+    return m_farPlane;
+  }
+
+  // Set the far plane.
+  void setFarPlane(F32 farPlane);
+
+  // Return the field of view of the camera.
+  ca::Angle fieldOfView() const {
+    return m_fieldOfView;
+  }
+
+  // Set the camera's field of view.
+  void setFieldOfView(ca::Angle fieldOfView);
 
   // Get the current position of the camera in world space.
   const ca::Vec3& position() const {
@@ -82,6 +107,11 @@ private:
 
   // The up vector of the world.
   ca::Vec3 m_worldUp;
+
+  F32 m_nearPlane = 0.1f;
+  F32 m_farPlane = 100.0f;
+
+  ca::Angle m_fieldOfView;
 
   // The current position of the camera in world space.
   ca::Vec3 m_position{0.0f, 0.0f, 0.0f};

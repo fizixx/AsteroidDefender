@@ -1,6 +1,5 @@
 #include "ad/World/CameraInputController.h"
 #include "ad/World/Camera.h"
-#include "nucleus/Logging.h"
 
 CameraInputController::CameraInputController(Camera* camera, F32 mouseSensitivity)
   : m_camera(camera), m_mouseSensitivity{mouseSensitivity} {}
@@ -98,7 +97,7 @@ void CameraInputController::onKeyReleased(const ca::KeyEvent& event) {
 }
 
 void CameraInputController::tick(F32 delta) {
-  constexpr F32 kMovementSpeed = 3.0f;
+  constexpr F32 kMovementSpeed = 0.1f;
 
   auto forwardMovement = m_camera->forward() * m_moveDirection.y;
   auto rightMovement = m_camera->right() * m_moveDirection.x;

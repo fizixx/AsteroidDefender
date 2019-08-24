@@ -114,11 +114,9 @@ public:
       return false;
     }
 
-    m_worldCamera.moveTo({0.0f, 0.0f, 50.0f});
-    // m_worldCamera.yaw(ca::Angle::fromDegrees(90.0f));
-    // m_worldCamera.yaw(ca::Angle::fromDegrees(0.0f));
-    m_debugCamera.moveTo(m_worldCamera.position());
-    // m_debugCamera.rotate(180.0f, 0.0f);
+    m_worldCamera.moveTo({0.0f, 0.0f, 25.0f});
+    m_worldCamera.setNearPlane(10.0f);
+    m_worldCamera.setFarPlane(100.0f);
 
     return true;
   }
@@ -134,47 +132,40 @@ public:
   }
 
   void onMouseMoved(const ca::MouseEvent& event) override {
-    if (m_useDebugCamera) {
-      m_debugCameraInputController.onMouseMoved(event);
-    } else {
-      m_worldCameraInputController.onMouseMoved(event);
-      m_currentMousePosition = {static_cast<F32>(event.pos.x), static_cast<F32>(event.pos.y)};
-    }
+    m_worldCameraInputController.onMouseMoved(event);
+    m_currentMousePosition = {static_cast<F32>(event.pos.x), static_cast<F32>(event.pos.y)};
   }
 
   bool onMousePressed(const ca::MouseEvent& event) override {
-    if (m_useDebugCamera) {
-      m_debugCameraInputController.onMousePressed(event);
-    } else {
-      m_worldCameraInputController.onMousePressed(event);
-    }
+    m_worldCameraInputController.onMousePressed(event);
 
     return false;
   }
 
   void onMouseReleased(const ca::MouseEvent& event) override {
-    if (m_useDebugCamera) {
-      m_debugCameraInputController.onMouseReleased(event);
-    } else {
-      m_worldCameraInputController.onMouseReleased(event);
-    }
+    m_worldCameraInputController.onMouseReleased(event);
   }
 
   void onMouseWheel(const ca::MouseWheelEvent& evt) override {
-    m_worldCamera.moveBy({0.0f, 0.0f, -evt.wheelOffset.y * 10.0f});
+    m_worldCamera.setFieldOfView(m_worldCamera.fieldOfView() +
+                                 ca::degrees(-static_cast<F32>(evt.wheelOffset.y)));
   }
 
   void onKeyPressed(const ca::KeyEvent& evt) override {
-    if (m_useDebugCamera) {
-      m_debugCameraInputController.onKeyPressed(evt);
-    } else {
-      m_worldCameraInputController.onKeyPressed(evt);
-    }
+    m_worldCameraInputController.onKeyPressed(evt);
 
     switch (evt.key) {
       case ca::Key::C:
         m_useDebugCamera = !m_useDebugCamera;
-        m_cameraLabel->setLabel(m_useDebugCamera ? "debug camera" : "world camera");
+        m_cameraLabel->setLabel(m_useDebugCamera ? "debug" : "world");
+        break;
+
+      case ca::Key::LBracket:
+        m_fieldOfViewMovement -= 1.0f;
+        break;
+
+      case ca::Key::RBracket:
+        m_fieldOfViewMovement += 1.0f;
         break;
 
       default:
@@ -183,19 +174,26 @@ public:
   }
 
   void onKeyReleased(const ca::KeyEvent& evt) override {
-    if (m_useDebugCamera) {
-      m_debugCameraInputController.onKeyReleased(evt);
-    } else {
-      m_worldCameraInputController.onKeyReleased(evt);
+    m_worldCameraInputController.onKeyReleased(evt);
+
+    switch (evt.key) {
+      case ca::Key::LBracket:
+        m_fieldOfViewMovement += 1.0f;
+        break;
+
+      case ca::Key::RBracket:
+        m_fieldOfViewMovement -= 1.0f;
+        break;
+
+      default:
+        break;
     }
   }
 
   void tick(F32 delta) override {
-    if (m_useDebugCamera) {
-      m_debugCameraInputController.tick(delta);
-    } else {
-      m_worldCameraInputController.tick(delta);
-    }
+    m_worldCameraInputController.tick(delta);
+    m_worldCamera.setFieldOfView(m_worldCamera.fieldOfView() +
+                                 ca::degrees(m_fieldOfViewMovement * delta * 0.1f));
 
     {
       m_ray = m_worldCamera.createRayForMouse(m_currentMousePosition);
@@ -212,71 +210,125 @@ public:
 
   void onRender(ca::Renderer* renderer) override {
     m_lineRenderer.beginFrame();
-    m_spriteRenderer.beginFrame(m_useDebugCamera ? &m_debugCamera : &m_worldCamera);
-
-    drawCross(&m_lineRenderer, ca::Vec3::zero, ca::Color::red, 100.0f);
-
-    m_world.render(&m_spriteRenderer);
+    m_spriteRenderer.beginFrame(&m_worldCamera);
 
     glEnable(GL_DEPTH_TEST);
-    {
-      static ca::Angle yRotation{ca::degrees(45.0f)};
-      // yRotation += 1.0f;
 
-      static ca::Angle yView = ca::degrees(0.0f);
-      static F32 delta = 1.0f;
-      yView += ca::degrees(delta);
-      if (yView.degrees() > 100.0f || yView.degrees() < -100.0f) {
-        delta *= -1.0f;
-      }
+    // View (world)
 
-      ca::UniformBuffer uniforms;
+    ca::Mat4 viewWorld{ca::Mat4::identity};
+    m_worldCamera.updateViewMatrix(&viewWorld);
 
-      ca::Mat4 projection = ca::perspectiveProjection(ca::degrees(120.0f), 1.0f, 0.1f, 50.0f);
+    // Projection
 
-      ca::Quaternion viewOrientation{
-          ca::Quaternion::fromEulerAngles(ca::Angle::zero, yView, ca::Angle::zero)};
-      ca::Mat4 view = ca::createViewMatrix({0.0f, 0.0f, 10.0f}, viewOrientation);
+    ca::Mat4 projection = ca::perspectiveProjection(ca::degrees(45.0f), 1.0f, 0.1f, 15000.0f);
 
-      {
-        ca::Mat4 modelTranslation = ca::translationMatrix({0.5f, 0.0f, -2.0f});
-        ca::Quaternion orientation =
-            ca::Quaternion::fromEulerAngles(ca::degrees(0.0f), yRotation, ca::degrees(0.0f));
-        ca::Mat4 modelRotation{orientation.toRotationMatrix()};
-        ca::Mat4 modelScale = ca::scaleMatrix(0.5f);
+    // View (debug)
 
-        ca::Mat4 model = ca::createModelMatrix(modelTranslation, modelRotation, modelScale);
+    Camera debugCamera;
+    debugCamera.moveTo({-25.0f, 25.0f, 50.0f});
+    debugCamera.rotateTo(
+        ca::Quaternion::fromEulerAngles(ca::degrees(-30.0f), ca::degrees(-30.0f), ca::Angle::zero));
 
-        ca::Mat4 transform = projection * view * model;
+    ca::Mat4 viewDebug{ca::Mat4::identity};
+    debugCamera.updateViewMatrix(&viewDebug);
 
-        uniforms.set(m_cube.transformUniformId, transform);
-        renderGeometry(renderer, m_cube.geometry, m_cube.programId, uniforms);
-      }
+    // Final matrix
 
-      {
-        ca::Mat4 modelTranslation = ca::translationMatrix({-0.5f, 0.0f, -2.0f});
-        ca::Mat4 modelRotation = ca::rotationMatrix(ca::Vec3::up, yRotation);
-        ca::Mat4 modelScale = ca::scaleMatrix(0.5f);
+    ca::Mat4 finalMatrix = ca::Mat4::identity;
+    if (m_useDebugCamera) {
+      finalMatrix = projection * viewDebug;
+    } else {
+      ca::Mat4 camProjection = ca::Mat4::identity;
+      ca::Mat4 camView = ca::Mat4::identity;
 
-        ca::Mat4 model = ca::createModelMatrix(modelTranslation, modelRotation, modelScale);
+      m_worldCamera.updateProjectionMatrix(&camProjection);
+      m_worldCamera.updateViewMatrix(&camView);
 
-        ca::Mat4 transform = projection * view * model;
+      finalMatrix = camProjection * camView;
+    }
 
-        uniforms.set(m_cube.transformUniformId, transform);
-        renderGeometry(renderer, m_cube.geometry, m_cube.programId, uniforms);
+    // Render
+    for (I32 z = -5; z <= 5; ++z) {
+      for (I32 y = -5; y <= 5; ++y) {
+        for (I32 x = -5; x <= 5; ++x) {
+          const ca::Vec3& position =
+              ca::Vec3{static_cast<F32>(x), static_cast<F32>(y), static_cast<F32>(z)};
+          drawCube(renderer, position, ca::Quaternion::identity, finalMatrix);
+        }
       }
     }
+
+    if (m_useDebugCamera) {
+      drawCamera(renderer, finalMatrix, &m_worldCamera);
+    }
+
+    m_lineRenderer.render(finalMatrix);
+
     glDisable(GL_DEPTH_TEST);
 
-    {
-      ca::Mat4 projection = ca::Mat4::identity;
-      ca::Mat4 view = ca::Mat4::identity;
-      m_worldCamera.updateProjectionMatrix(&projection);
-      m_worldCamera.updateViewMatrix(&view);
-      m_lineRenderer.render(projection * view);
+    m_ui.render(renderer);
+  }
+
+  void drawCube(ca::Renderer* renderer, const ca::Vec3& position, const ca::Quaternion& orientation,
+                const ca::Mat4& finalMatrix) {
+    ca::UniformBuffer uniforms;
+
+    ca::Mat4 modelTranslation = translationMatrix(position);
+    ca::Mat4 modelRotation{orientation.toRotationMatrix()};
+    ca::Mat4 modelScale = ca::scaleMatrix(0.5f);
+
+    ca::Mat4 model = ca::createModelMatrix(modelTranslation, modelRotation, modelScale);
+
+    ca::Mat4 final = finalMatrix * model;
+
+    uniforms.set(m_cube.transformUniformId, final);
+    renderGeometry(renderer, m_cube.geometry, m_cube.programId, uniforms);
+  }
+
+  void drawCamera(ca::Renderer* renderer, const ca::Mat4& finalMatrix, Camera* camera) {
+    drawCube(renderer, m_worldCamera.position(), camera->orientation(), finalMatrix);
+
+    m_lineRenderer.renderLine(camera->position(), camera->position() + camera->forward(),
+                              ca::Color::red);
+    m_lineRenderer.renderLine(camera->position(), camera->position() + camera->right(),
+                              ca::Color::green);
+    m_lineRenderer.renderLine(camera->position(), camera->position() + camera->up(),
+                              ca::Color::blue);
+
+    // Draw the frustum.
+    ca::Mat4 camProjection = ca::Mat4::identity;
+    ca::Mat4 camView = ca::Mat4::identity;
+
+    camera->updateProjectionMatrix(&camProjection);
+    camera->updateViewMatrix(&camView);
+
+    ca::Mat4 camInverse{ca::inverse(camProjection * camView)};
+
+    static ca::Vec4 vertices[] = {
+        {-1.0f, -1.0f, -1.0f, 1.0f},  //
+        {+1.0f, -1.0f, -1.0f, 1.0f},  //
+        {+1.0f, +1.0f, -1.0f, 1.0f},  //
+        {-1.0f, +1.0f, -1.0f, 1.0f},  //
+        {-1.0f, -1.0f, +1.0f, 1.0f},  //
+        {+1.0f, -1.0f, +1.0f, 1.0f},  //
+        {+1.0f, +1.0f, +1.0f, 1.0f},  //
+        {-1.0f, +1.0f, +1.0f, 1.0f},  //
+    };
+
+    nu::DynamicArray<ca::Vec4> pos;
+    for (ca::Vec4& v : vertices) {
+      pos.pushBack([&camInverse, &v](ca::Vec4* storage) {
+        *storage = camInverse * v;
+        *storage /= storage->w;
+      });
     }
 
-    m_ui.render(renderer);
+    for (MemSize i = 0; i < 4; ++i) {
+      m_lineRenderer.renderLine(pos[0 + i].xyz(), pos[0 + ((i + 1) % 4)].xyz(), ca::Color::white);
+      m_lineRenderer.renderLine(pos[4 + i].xyz(), pos[4 + ((i + 1) % 4)].xyz(), ca::Color::white);
+      m_lineRenderer.renderLine(pos[i].xyz(), pos[4 + i].xyz(), ca::Color::white);
+    }
   }
 
 private:
@@ -303,8 +355,9 @@ private:
   el::LabelView* m_cameraLabel = nullptr;
 
   SpriteRenderer m_spriteRenderer;
-  Camera m_worldCamera;
   World m_world;
+
+  F32 m_fieldOfViewMovement = 0.0f;
 
   struct {
     Geometry geometry;
@@ -312,11 +365,10 @@ private:
     ca::UniformId transformUniformId;
   } m_cube;
 
-  bool m_useDebugCamera = false;
-  Camera m_debugCamera;
-
+  Camera m_worldCamera{ca::degrees(60.0f)};
   CameraInputController m_worldCameraInputController{&m_worldCamera, 0.1f};
-  CameraInputController m_debugCameraInputController{&m_debugCamera, 0.1f};
+
+  bool m_useDebugCamera = true;
 
   ca::Ray m_ray;
 
