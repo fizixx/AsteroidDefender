@@ -263,6 +263,23 @@ public:
       drawCamera(renderer, finalMatrix, &m_worldCamera);
     }
 
+    {
+      ca::Ray mouseRay = m_worldCamera.createRayForMouse(m_currentMousePosition);
+
+      ca::Plane p{-ca::Vec3::forward, 0.0f};
+      auto intersection = ca::intersection(p, mouseRay);
+
+      drawCube(renderer, intersection.position, ca::Quaternion::identity, finalMatrix);
+
+      ca::Vec3 p1 = mouseRay.origin;
+      ca::Vec3 p2 = mouseRay.origin +
+                    mouseRay.direction * (m_worldCamera.farPlane() + m_worldCamera.nearPlane());
+
+      m_lineRenderer.renderLine(p1, p2, ca::Color::red);
+      m_lineRenderer.renderLine(ca::Vec3::zero, p1, ca::Color::green);
+      m_lineRenderer.renderLine(ca::Vec3::zero, p2, ca::Color::blue);
+    }
+
     m_lineRenderer.render(finalMatrix);
 
     glDisable(GL_DEPTH_TEST);

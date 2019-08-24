@@ -78,15 +78,16 @@ ca::Ray Camera::createRayForMouse(const ca::Vec2& mousePosition) {
   updateProjectionMatrix();
   updateViewMatrix();
 
-  ca::Mat4 inverseVP = ca::inverse(m_projectionMatrix * m_viewMatrix);
+  ca::Mat4 inverse = ca::inverse(m_projectionMatrix * m_viewMatrix);
 
   F32 nx = (2.0f * mousePosition.x / m_size.x) - 1.0f;
   F32 ny = 1.0f - (2.0f * mousePosition.y / m_size.y);
 
-  ca::Vec4 rayOrigin = inverseVP * ca::Vec4{nx, ny, -1.f, 1.0f};
-  ca::Vec4 rayTarget = inverseVP * ca::Vec4{nx, ny, 0.0f, 1.0f};
+  ca::Vec4 rayOrigin = inverse * ca::Vec4{nx, ny, -1.0f, 1.0f};
+  ca::Vec4 rayTarget = inverse * ca::Vec4{nx, ny, +1.0f, 1.0f};
 
-  // LOG(Info) << "rayOrigin = " << rayOrigin << ", rayTarget = " << rayTarget;
+  rayOrigin /= rayOrigin.w;
+  rayTarget /= rayTarget.w;
 
   ca::Vec4 rayDirection = rayTarget - rayOrigin;
 
