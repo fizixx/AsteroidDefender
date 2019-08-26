@@ -203,10 +203,6 @@ public:
   }
 
   void tick(F32 delta) override {
-    // m_worldCameraInputController.tick(delta);
-    m_worldCamera.setFieldOfView(m_worldCamera.fieldOfView() +
-                                 ca::degrees(m_fieldOfViewMovement * delta * 0.1f));
-
     m_topDownCameraController.tick(delta);
 
     {
@@ -330,7 +326,7 @@ public:
   }
 
   void drawCamera(ca::Renderer* renderer, const ca::Mat4& finalMatrix, Camera* camera) {
-    drawCube(renderer, m_worldCamera.position(), camera->orientation(), finalMatrix);
+    drawCube(renderer, camera->position(), camera->orientation(), finalMatrix);
 
     m_lineRenderer.renderLine(camera->position(), camera->position() + camera->forward(),
                               ca::Color::red);
@@ -409,7 +405,6 @@ private:
   } m_cube;
 
   Camera m_worldCamera{ca::degrees(60.0f)};
-  // CameraController m_worldCameraInputController{&m_worldCamera, 0.1f};
   TopDownCameraController m_topDownCameraController{&m_worldCamera, 100.0f};
 
   bool m_useDebugCamera = true;

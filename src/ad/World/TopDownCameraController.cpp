@@ -8,6 +8,9 @@ TopDownCameraController::TopDownCameraController(Camera* camera, F32 height)
 
 void TopDownCameraController::tick(F32 delta) {
   m_camera->moveBy(m_movement.direction * delta);
+
+  // TODO: fix
+  m_height = 1.0f;
 }
 
 void TopDownCameraController::onMouseMoved(const ca::MouseEvent& event) {

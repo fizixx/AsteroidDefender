@@ -19,7 +19,7 @@ ca::Vec2 Camera::convertScreenPositionToClipSpace(const ca::Pos& mousePosition,
   F32 x = (2.0f * static_cast<F32>(mousePosition.x) / static_cast<F32>(screenSize.width)) - 1.0f;
   F32 y = 1.0f - (2.0f * static_cast<F32>(mousePosition.y) / static_cast<F32>(screenSize.height));
 
-  return {x, y};
+  return {ca::clamp(x, -1.0f, 1.0f), ca::clamp(y, -1.0f, 1.0f)};
 }
 
 // static
@@ -28,7 +28,7 @@ F32 Camera::aspectRatioFromScreenSize(const ca::Size& size) {
 }
 
 Camera::Camera(ca::Angle fieldOfView, F32 aspectRatio, const ca::Vec3& worldUp)
-  : m_fieldOfView{fieldOfView}, m_aspectRatio{aspectRatio}, m_worldUp{ca::normalize(worldUp)} {
+  : m_worldUp{ca::normalize(worldUp)}, m_fieldOfView{fieldOfView}, m_aspectRatio{aspectRatio} {
   updateProjectionMatrix();
   updateViewMatrix();
 }
