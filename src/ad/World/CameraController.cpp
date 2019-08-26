@@ -1,10 +1,10 @@
-#include "ad/World/CameraInputController.h"
+#include "ad/World/CameraController.h"
 #include "ad/World/Camera.h"
 
-CameraInputController::CameraInputController(Camera* camera, F32 mouseSensitivity)
+CameraController::CameraController(Camera* camera, F32 mouseSensitivity)
   : m_camera(camera), m_mouseSensitivity{mouseSensitivity} {}
 
-void CameraInputController::onMouseMoved(const ca::MouseEvent& event) {
+void CameraController::onMouseMoved(const ca::MouseEvent& event) {
   if (m_mouseIsDown) {
     ca::Vec2 delta{
         static_cast<F32>(event.pos.x - m_lastMousePosition.x),
@@ -21,20 +21,20 @@ void CameraInputController::onMouseMoved(const ca::MouseEvent& event) {
   }
 }
 
-void CameraInputController::onMousePressed(const ca::MouseEvent& event) {
+void CameraController::onMousePressed(const ca::MouseEvent& event) {
   if (event.button == ca::MouseEvent::Left) {
     m_mouseIsDown = true;
     m_lastMousePosition = event.pos;
   }
 }
 
-void CameraInputController::onMouseReleased(const ca::MouseEvent& event) {
+void CameraController::onMouseReleased(const ca::MouseEvent& event) {
   if (event.button == ca::MouseEvent::Left) {
     m_mouseIsDown = false;
   }
 }
 
-void CameraInputController::onKeyPressed(const ca::KeyEvent& event) {
+void CameraController::onKeyPressed(const ca::KeyEvent& event) {
   switch (event.key) {
     case ca::Key::A:
       m_moveDirection.x -= 1.0f;
@@ -65,7 +65,7 @@ void CameraInputController::onKeyPressed(const ca::KeyEvent& event) {
   }
 }
 
-void CameraInputController::onKeyReleased(const ca::KeyEvent& event) {
+void CameraController::onKeyReleased(const ca::KeyEvent& event) {
   switch (event.key) {
     case ca::Key::A:
       m_moveDirection.x += 1.0f;
@@ -96,7 +96,7 @@ void CameraInputController::onKeyReleased(const ca::KeyEvent& event) {
   }
 }
 
-void CameraInputController::tick(F32 delta) {
+void CameraController::tick(F32 delta) {
   constexpr F32 kMovementSpeed = 0.1f;
 
   auto forwardMovement = m_camera->forward() * m_moveDirection.y;

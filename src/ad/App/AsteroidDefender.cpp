@@ -1,7 +1,8 @@
+#include <ad/World/TopDownCameraController.h>
 #include "ad/Geometry/Geometry.h"
 #include "ad/Sprites/SpriteConverter.h"
 #include "ad/Sprites/SpriteRenderer.h"
-#include "ad/World/CameraInputController.h"
+#include "ad/World/CameraController.h"
 #include "ad/World/World.h"
 #include "canvas/App.h"
 #include "canvas/Math/Intersection.h"
@@ -116,9 +117,9 @@ public:
 
     m_debugCamera.setFarPlane(5000.0f);
 
-    m_worldCamera.moveTo({0.0f, 0.0f, 25.0f});
+    m_worldCamera.moveTo({0.0f, 0.0f, 150.0f});
     m_worldCamera.setNearPlane(10.0f);
-    m_worldCamera.setFarPlane(100.0f);
+    m_worldCamera.setFarPlane(200.0f);
 
     return true;
   }
@@ -131,32 +132,38 @@ public:
     m_debugCamera.setAspectRatio(Camera::aspectRatioFromScreenSize(m_screenSize));
     m_worldCamera.setAspectRatio(Camera::aspectRatioFromScreenSize(m_screenSize));
 
-    m_spriteRenderer.resize(size);
     m_ui.resize(size);
   }
 
   void onMouseMoved(const ca::MouseEvent& event) override {
-    m_worldCameraInputController.onMouseMoved(event);
+    // m_worldCameraInputController.onMouseMoved(event);
+    m_topDownCameraController.onMouseMoved(event);
     m_currentMousePosition = event.pos;
   }
 
   bool onMousePressed(const ca::MouseEvent& event) override {
-    m_worldCameraInputController.onMousePressed(event);
+    // m_worldCameraInputController.onMousePressed(event);
+    m_topDownCameraController.onMousePressed(event);
 
     return false;
   }
 
   void onMouseReleased(const ca::MouseEvent& event) override {
-    m_worldCameraInputController.onMouseReleased(event);
+    // m_worldCameraInputController.onMouseReleased(event);
+    m_topDownCameraController.onMouseReleased(event);
   }
 
-  void onMouseWheel(const ca::MouseWheelEvent& evt) override {
+  void onMouseWheel(const ca::MouseWheelEvent& event) override {
+#if 0
     m_worldCamera.setFieldOfView(m_worldCamera.fieldOfView() +
                                  ca::degrees(-static_cast<F32>(evt.wheelOffset.y)));
+#endif
+    m_topDownCameraController.onMouseWheel(event);
   }
 
   void onKeyPressed(const ca::KeyEvent& evt) override {
-    m_worldCameraInputController.onKeyPressed(evt);
+    // m_worldCameraInputController.onKeyPressed(evt);
+    m_topDownCameraController.onKeyPressed(evt);
 
     switch (evt.key) {
       case ca::Key::C:
@@ -178,7 +185,8 @@ public:
   }
 
   void onKeyReleased(const ca::KeyEvent& evt) override {
-    m_worldCameraInputController.onKeyReleased(evt);
+    // m_worldCameraInputController.onKeyReleased(evt);
+    m_topDownCameraController.onKeyReleased(evt);
 
     switch (evt.key) {
       case ca::Key::LBracket:
@@ -195,9 +203,11 @@ public:
   }
 
   void tick(F32 delta) override {
-    m_worldCameraInputController.tick(delta);
+    // m_worldCameraInputController.tick(delta);
     m_worldCamera.setFieldOfView(m_worldCamera.fieldOfView() +
                                  ca::degrees(m_fieldOfViewMovement * delta * 0.1f));
+
+    m_topDownCameraController.tick(delta);
 
     {
       m_ray = m_worldCamera.createRayForMouse(
@@ -213,8 +223,8 @@ public:
 
   void onRender(ca::Renderer* renderer) override {
     m_lineRenderer.beginFrame();
-    m_spriteRenderer.beginFrame(&m_worldCamera);
 
+#if 1
     glEnable(GL_DEPTH_TEST);
 
     // View (world)
@@ -291,6 +301,14 @@ public:
     m_lineRenderer.render(finalMatrix);
 
     glDisable(GL_DEPTH_TEST);
+#endif  // 0
+
+    if (m_useDebugCamera) {
+      m_spriteRenderer.beginFrame(&m_debugCamera);
+    } else {
+      m_spriteRenderer.beginFrame(&m_worldCamera);
+    }
+    m_world.render(&m_spriteRenderer);
 
     m_ui.render(renderer);
   }
@@ -391,7 +409,8 @@ private:
   } m_cube;
 
   Camera m_worldCamera{ca::degrees(60.0f)};
-  CameraInputController m_worldCameraInputController{&m_worldCamera, 0.1f};
+  // CameraController m_worldCameraInputController{&m_worldCamera, 0.1f};
+  TopDownCameraController m_topDownCameraController{&m_worldCamera, 100.0f};
 
   bool m_useDebugCamera = true;
   Camera m_debugCamera;

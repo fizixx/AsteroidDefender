@@ -130,7 +130,6 @@ void Camera::invalidateView() {
 }
 
 void Camera::updateProjectionMatrix() {
-  LOG(Info) << this << " == " << m_aspectRatio;
   m_projectionMatrix =
       ca::perspectiveProjection(m_fieldOfView, m_aspectRatio, m_nearPlane, m_farPlane);
 }

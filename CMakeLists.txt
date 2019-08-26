@@ -22,8 +22,10 @@ set(AsteroidDefender_SOURCE_FILES
 
     src/ad/World/Camera.cpp
     src/ad/World/Camera.h
-    src/ad/World/CameraInputController.h
-    src/ad/World/CameraInputController.cpp
+    src/ad/World/TopDownCameraController.h
+    src/ad/World/TopDownCameraController.cpp
+    src/ad/World/CameraController.h
+    src/ad/World/CameraController.cpp
     src/ad/World/Entity.h
     src/ad/World/World.cpp
     src/ad/World/World.h

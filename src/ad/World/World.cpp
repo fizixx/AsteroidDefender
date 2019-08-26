@@ -18,12 +18,10 @@ bool World::initialize(hi::ResourceManager* resourceManager) {
 
   m_cursorEntityId = createCursor();
   createCommandCenter({0.0f, 0.0f});
-  createCommandCenter({100.0f, 0.0f});
-  createCommandCenter({-100.0f, 0.0f});
-  createCommandCenter({0.0f, 100.0f});
-  createCommandCenter({0.0f, -100.0f});
-  createCommandCenter({0.0f, 0.0f});
-  createCommandCenter({0.0f, 0.0f});
+  createCommandCenter({20.0f, 0.0f});
+  createCommandCenter({-20.0f, 0.0f});
+  createCommandCenter({0.0f, 20.0f});
+  createCommandCenter({0.0f, -20.0f});
 
   return true;
 }
@@ -46,7 +44,7 @@ void World::render(SpriteRenderer* spriteRenderer) {
 EntityId World::createCursor() {
   auto result = m_entities.pushBack([this](Entity* entity) {
     entity->position = {0.0f, 0.0f};
-    entity->scale = 50.0f;
+    entity->scale = 5.0f;
     entity->sprite = m_cursorSprite;
   });
 
@@ -56,7 +54,7 @@ EntityId World::createCursor() {
 EntityId World::createCommandCenter(const ca::Vec2& position) {
   auto result = m_entities.pushBack([this, &position](Entity* entity) {
     entity->position = position;
-    entity->scale = 100.0f;
+    entity->scale = 10.0f;
     entity->sprite = m_commandCenterSprite;
   });
 

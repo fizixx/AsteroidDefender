@@ -108,26 +108,6 @@ bool SpriteRenderer::initialize(ca::Renderer* renderer) {
   return true;
 }
 
-void SpriteRenderer::resize(const ca::Size& UNUSED(size)) {
-#if 0
-  F32 halfWidth = static_cast<F32>(size.width) / 2.0f;
-  F32 halfHeight = static_cast<F32>(size.height) / 2.0f;
-
-#if 0
-  m_projection =
-      ca::orthographicProjection(-halfWidth, halfWidth, -halfHeight, halfHeight, -1.0f, 1.0f);
-#else
-  m_projection =
-      ca::perspectiveProjection(ca::degrees(45.0f), halfWidth / halfHeight, 0.1f, 1000.0f);
-#endif
-#endif  // 0
-}
-
-ca::Vec2 SpriteRenderer::convertDeviceCoordinatesToWorldCoordinates(ca::Pos pos) {
-  auto result = m_view * ca::Vec4{static_cast<F32>(pos.x), static_cast<F32>(pos.y), 0.0f, 1.0f};
-  return {result.x, result.y};
-}
-
 void SpriteRenderer::beginFrame(Camera* camera) {
   camera->updateProjectionMatrix(&m_projection);
   camera->updateViewMatrix(&m_view);

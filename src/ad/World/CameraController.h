@@ -7,9 +7,9 @@
 
 class Camera;
 
-class CameraInputController {
+class CameraController {
 public:
-  explicit CameraInputController(Camera* camera, F32 mouseSensitivity = 1.0f);
+  explicit CameraController(Camera* camera, F32 mouseSensitivity = 1.0f);
 
   void onMouseMoved(const ca::MouseEvent& event);
   void onMousePressed(const ca::MouseEvent& event);
@@ -21,7 +21,7 @@ public:
   void tick(F32 delta);
 
 private:
-  DELETE_COPY_AND_MOVE(CameraInputController);
+  DELETE_COPY_AND_MOVE(CameraController);
 
   // The camera we are controlling.
   Camera* m_camera;
