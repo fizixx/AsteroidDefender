@@ -1,10 +1,12 @@
 #include "ad/World/TopDownCameraController.h"
+#include "canvas/Math/Intersection.h"
 
 constexpr F32 kMouseSensitivity = 0.005f;
 constexpr F32 kKeyboardSensitivity = 0.5f;
 
-TopDownCameraController::TopDownCameraController(Camera* camera, F32 height)
-  : m_camera{camera}, m_height{height} {}
+TopDownCameraController::TopDownCameraController(Camera* camera, const ca::Plane& worldPlane,
+                                                 F32 height)
+  : m_camera{camera}, m_worldPlane{worldPlane}, m_height{height} {}
 
 void TopDownCameraController::tick(F32 delta) {
   m_camera->moveBy(m_movement.direction * delta);
@@ -13,38 +15,36 @@ void TopDownCameraController::tick(F32 delta) {
   m_height = 1.0f;
 }
 
-void TopDownCameraController::onMouseMoved(const ca::MouseEvent& event) {
+void TopDownCameraController::onMouseMoved(const ca::Vec2& position) {
   if (m_movement.isMoving) {
-    ca::Vec3 delta{
-        static_cast<F32>(event.pos.x) - static_cast<F32>(m_movement.lastMousePosition.x),
-        (static_cast<F32>(event.pos.y) - static_cast<F32>(m_movement.lastMousePosition.y)) * -1.0f,
-        0.0f};
+    ca::Vec3 newPositionInWorld = getMousePositionInWorld(position);
+    ca::Vec3 worldDelta = m_movement.lastMousePositionInWorld - newPositionInWorld;
 
-    m_movement.direction = delta * kMouseSensitivity;
+    m_camera->moveBy(worldDelta);
   }
 }
 
-void TopDownCameraController::onMousePressed(const ca::MouseEvent& event) {
-  if (event.button == ca::MouseEvent::Right) {
+void TopDownCameraController::onMousePressed(ca::MouseEvent::Button button,
+                                             const ca::Vec2& position) {
+  if (button == ca::MouseEvent::Right) {
     m_movement.isMoving = true;
-    m_movement.lastMousePosition = event.pos;
+    m_movement.lastMousePositionInWorld = getMousePositionInWorld(position);
   }
 }
 
-void TopDownCameraController::onMouseReleased(const ca::MouseEvent& event) {
-  if (event.button == ca::MouseEvent::Right) {
+void TopDownCameraController::onMouseReleased(ca::MouseEvent::Button button,
+                                              const ca::Vec2& position) {
+  if (button == ca::MouseEvent::Right) {
     m_movement.isMoving = false;
-    m_movement.direction = ca::Vec3::zero;
   }
 }
 
-void TopDownCameraController::onMouseWheel(const ca::MouseWheelEvent& event) {
-  m_camera->setFieldOfView(m_camera->fieldOfView() +
-                           ca::degrees(-static_cast<F32>(event.wheelOffset.y)));
+void TopDownCameraController::onMouseWheel(const ca::Vec2& offset) {
+  m_camera->setFieldOfView(m_camera->fieldOfView() + ca::degrees(-offset.y));
 }
 
-void TopDownCameraController::onKeyPressed(const ca::KeyEvent& event) {
-  switch (event.key) {
+void TopDownCameraController::onKeyPressed(ca::Key key) {
+  switch (key) {
     case ca::Key::A:
       m_movement.direction -= ca::Vec3::right * kKeyboardSensitivity;
       break;
@@ -66,8 +66,8 @@ void TopDownCameraController::onKeyPressed(const ca::KeyEvent& event) {
   }
 }
 
-void TopDownCameraController::onKeyReleased(const ca::KeyEvent& event) {
-  switch (event.key) {
+void TopDownCameraController::onKeyReleased(ca::Key key) {
+  switch (key) {
     case ca::A:
       m_movement.direction += ca::Vec3::right * kKeyboardSensitivity;
       break;
@@ -87,4 +87,10 @@ void TopDownCameraController::onKeyReleased(const ca::KeyEvent& event) {
     default:
       break;
   }
+}
+
+ca::Vec3 TopDownCameraController::getMousePositionInWorld(const ca::Vec2& mousePosition) const {
+  auto ray = m_camera->createRayForMouse(mousePosition);
+  auto result = ca::intersection(m_worldPlane, ray);
+  return result.position;
 }

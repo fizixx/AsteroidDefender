@@ -136,36 +136,32 @@ public:
   }
 
   void onMouseMoved(const ca::MouseEvent& event) override {
-    // m_worldCameraInputController.onMouseMoved(event);
-    m_topDownCameraController.onMouseMoved(event);
+    m_topDownCameraController.onMouseMoved(
+        Camera::convertScreenPositionToClipSpace(event.pos, m_screenSize));
     m_currentMousePosition = event.pos;
   }
 
   bool onMousePressed(const ca::MouseEvent& event) override {
-    // m_worldCameraInputController.onMousePressed(event);
-    m_topDownCameraController.onMousePressed(event);
+    m_topDownCameraController.onMousePressed(
+        event.button, Camera::convertScreenPositionToClipSpace(event.pos, m_screenSize));
 
     return false;
   }
 
   void onMouseReleased(const ca::MouseEvent& event) override {
-    // m_worldCameraInputController.onMouseReleased(event);
-    m_topDownCameraController.onMouseReleased(event);
+    m_topDownCameraController.onMouseReleased(
+        event.button, Camera::convertScreenPositionToClipSpace(event.pos, m_screenSize));
   }
 
   void onMouseWheel(const ca::MouseWheelEvent& event) override {
-#if 0
-    m_worldCamera.setFieldOfView(m_worldCamera.fieldOfView() +
-                                 ca::degrees(-static_cast<F32>(evt.wheelOffset.y)));
-#endif
-    m_topDownCameraController.onMouseWheel(event);
+    m_topDownCameraController.onMouseWheel(
+        {static_cast<F32>(event.wheelOffset.x), static_cast<F32>(event.wheelOffset.y)});
   }
 
-  void onKeyPressed(const ca::KeyEvent& evt) override {
-    // m_worldCameraInputController.onKeyPressed(evt);
-    m_topDownCameraController.onKeyPressed(evt);
+  void onKeyPressed(const ca::KeyEvent& event) override {
+    m_topDownCameraController.onKeyPressed(event.key);
 
-    switch (evt.key) {
+    switch (event.key) {
       case ca::Key::C:
         m_useDebugCamera = !m_useDebugCamera;
         m_cameraLabel->setLabel(m_useDebugCamera ? "debug" : "world");
@@ -184,11 +180,10 @@ public:
     }
   }
 
-  void onKeyReleased(const ca::KeyEvent& evt) override {
-    // m_worldCameraInputController.onKeyReleased(evt);
-    m_topDownCameraController.onKeyReleased(evt);
+  void onKeyReleased(const ca::KeyEvent& event) override {
+    m_topDownCameraController.onKeyReleased(event.key);
 
-    switch (evt.key) {
+    switch (event.key) {
       case ca::Key::LBracket:
         m_fieldOfViewMovement += 1.0f;
         break;
@@ -405,9 +400,10 @@ private:
   } m_cube;
 
   Camera m_worldCamera{ca::degrees(60.0f)};
-  TopDownCameraController m_topDownCameraController{&m_worldCamera, 100.0f};
+  TopDownCameraController m_topDownCameraController{
+      &m_worldCamera, {ca::Vec3::forward, 0.0f}, 100.0f};
 
-  bool m_useDebugCamera = true;
+  bool m_useDebugCamera = false;
   Camera m_debugCamera;
 
   ca::Ray m_ray;
