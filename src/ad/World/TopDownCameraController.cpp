@@ -1,7 +1,7 @@
 #include "ad/World/TopDownCameraController.h"
 #include "canvas/Math/Intersection.h"
 
-constexpr F32 kMouseSensitivity = 0.005f;
+// constexpr F32 kMouseSensitivity = 0.005f;
 constexpr F32 kKeyboardSensitivity = 0.5f;
 
 TopDownCameraController::TopDownCameraController(Camera* camera, const ca::Plane& worldPlane,
@@ -33,7 +33,7 @@ void TopDownCameraController::onMousePressed(ca::MouseEvent::Button button,
 }
 
 void TopDownCameraController::onMouseReleased(ca::MouseEvent::Button button,
-                                              const ca::Vec2& position) {
+                                              const ca::Vec2& UNUSED(position)) {
   if (button == ca::MouseEvent::Right) {
     m_movement.isMoving = false;
   }

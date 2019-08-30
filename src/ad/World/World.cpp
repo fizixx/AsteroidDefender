@@ -1,6 +1,5 @@
 #include "World.h"
 
-#include "canvas/Utils/Image.h"
 #include "nucleus/Streams/FileInputStream.h"
 
 bool World::initialize(hi::ResourceManager* resourceManager) {
@@ -28,7 +27,7 @@ bool World::initialize(hi::ResourceManager* resourceManager) {
 
 void World::setCursorPosition(const ca::Vec2& position) {
   // LOG(Info) << "new cursor position: " << position;
-   m_cursorPosition = position;
+  m_cursorPosition = position;
 }
 
 void World::tick(F32 UNUSED(delta)) {
@@ -42,21 +41,29 @@ void World::render(SpriteRenderer* spriteRenderer) {
 }
 
 EntityId World::createCursor() {
-  auto result = m_entities.pushBack([this](Entity* entity) {
+#if 0
+  auto result = m_entities.constructBack([this](Entity* entity) {
     entity->position = {0.0f, 0.0f};
     entity->scale = 5.0f;
     entity->sprite = m_cursorSprite;
   });
+#else
+  auto result = m_entities.emplaceBack(ca::Vec2{0.0f, 0.0f}, 5.0f, m_cursorSprite);
+#endif
 
   return result.index();
 }
 
 EntityId World::createCommandCenter(const ca::Vec2& position) {
-  auto result = m_entities.pushBack([this, &position](Entity* entity) {
+#if 0
+  auto result = m_entities.constructBack([this, &position](Entity* entity) {
     entity->position = position;
     entity->scale = 10.0f;
     entity->sprite = m_commandCenterSprite;
   });
+#else
+  auto result = m_entities.emplaceBack(position, 10.0f, m_commandCenterSprite);
+#endif  // 0
 
   return result.index();
 }

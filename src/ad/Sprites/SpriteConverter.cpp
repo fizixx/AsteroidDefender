@@ -12,17 +12,17 @@ void SpriteConverter::setRenderer(ca::Renderer* renderer) {
 
 bool SpriteConverter::load(hi::ResourceManager* UNUSED(resourceManager),
                            nu::InputStream* inputStream, Sprite* storage) {
-  ca::Image image;
+  si::Image image;
   if (!image.loadFromStream(inputStream)) {
     return false;
   }
 
-  ca::TextureId textureId = m_renderer->createTexture(image);
+  ca::TextureId textureId = si::createTextureFromImage(m_renderer, image, false);
   if (!isValid(textureId)) {
     return false;
   }
 
-  storage->size = image.getSize();
+  storage->size = image.size();
   storage->textureId = textureId;
 
   return true;

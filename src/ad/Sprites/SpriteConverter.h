@@ -3,8 +3,8 @@
 
 #include "ad/Sprites/Sprite.h"
 
-#include "canvas/Utils/Image.h"
 #include "hive/Converter.h"
+#include "silhouette/Image/Image.h"
 
 namespace ca {
 class Renderer;

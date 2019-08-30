@@ -42,7 +42,7 @@ U16 kCubeIndices[] = {
 
 }  // namespace
 
-Geometry createCube(ca::Renderer* renderer) {
+bool createCube(Model* model, ca::Renderer* renderer) {
   ca::VertexDefinition def;
   def.addAttribute(ca::ComponentType::Float32, ca::ComponentCount::Three, "position");
   def.addAttribute(ca::ComponentType::Float32, ca::ComponentCount::Four, "color");
@@ -50,22 +50,38 @@ Geometry createCube(ca::Renderer* renderer) {
   auto vertexBufferId = renderer->createVertexBuffer(def, kCubeVertices, sizeof(kCubeVertices));
   if (!isValid(vertexBufferId)) {
     LOG(Error) << "Could not create cube vertices.";
-    return {};
+    return false;
   }
 
   auto indexBufferId = renderer->createIndexBuffer(ca::ComponentType::Unsigned16, kCubeIndices,
                                                    sizeof(kCubeIndices));
   if (!isValid(indexBufferId)) {
     LOG(Error) << "Could not create cube indices.";
-    return {};
+    return false;
   }
 
-  return {vertexBufferId, indexBufferId, sizeof(kCubeIndices) / sizeof(U16),
-          ca::DrawType::Triangles};
+  model->meshes.emplace_back(vertexBufferId, indexBufferId,
+                            static_cast<U32>(sizeof(kCubeIndices) / sizeof(U16)),
+                            ca::DrawType::Triangles);
+
+  model->rootNode.meshIndices.emplaceBack(0U);
+
+  return true;
 }
 
-void renderGeometry(ca::Renderer* renderer, const Geometry& geometry, ca::ProgramId programId,
-                    const ca::UniformBuffer& uniforms) {
-  renderer->draw(geometry.drawType, geometry.numIndices, programId, geometry.vertexBufferId,
-                 geometry.indexBufferId, {}, uniforms);
+UNUSED(static void renderNode(ca::Renderer* renderer, const Model& model, const Node& node,
+                              ca::ProgramId programId, const ca::UniformBuffer& uniforms) {
+  const Mesh& mesh = model.meshes[node.meshIndex];
+
+  renderer->draw(mesh.drawType, mesh.numIndices, programId, mesh.vertexBufferId, mesh.indexBufferId,
+                 {}, uniforms);
+
+  for (const Node& childNode : node.children) {
+    renderNode(renderer, model, childNode, programId, uniforms);
+  }
+})
+
+void renderModel(ca::Renderer* UNUSED(renderer), const Model& UNUSED(model),
+                 ca::ProgramId UNUSED(programId), const ca::UniformBuffer& UNUSED(uniforms)) {
+  // renderNode(renderer, model, model.rootNode, programId, uniforms);
 }

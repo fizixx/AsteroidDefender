@@ -1,8 +1,9 @@
-#include <ad/World/TopDownCameraController.h>
 #include "ad/Geometry/Geometry.h"
+#include "ad/Geometry/ModelConverter.h"
 #include "ad/Sprites/SpriteConverter.h"
 #include "ad/Sprites/SpriteRenderer.h"
 #include "ad/World/CameraController.h"
+#include "ad/World/TopDownCameraController.h"
 #include "ad/World/World.h"
 #include "canvas/App.h"
 #include "canvas/Math/Intersection.h"
@@ -67,8 +68,8 @@ public:
     ca::Renderer* renderer = window->getRenderer();
     m_lineRenderer.initialize(renderer);
 
-    m_cube.geometry = createCube(renderer);
-    if (!isValid(m_cube.geometry.vertexBufferId)) {
+    if (!createCube(&m_cube.model, renderer)) {
+      LOG(Error) << "Could not create cube.";
       return false;
     }
 
@@ -91,6 +92,11 @@ public:
 
     m_spriteConverter.setRenderer(renderer);
     m_resourceManager.registerConverter(&m_spriteConverter);
+
+    m_geometryConverter.setRenderer(renderer);
+    m_resourceManager.registerConverter(&m_geometryConverter);
+
+    m_model = m_resourceManager.get<Model>("command_center.dae");
 
     if (!m_ui.initialize(renderer)) {
       return false;
@@ -317,7 +323,9 @@ public:
     ca::Mat4 final = finalMatrix * model;
 
     uniforms.set(m_cube.transformUniformId, final);
-    renderGeometry(renderer, m_cube.geometry, m_cube.programId, uniforms);
+    renderModel(renderer, m_cube.model, m_cube.programId, uniforms);
+
+    renderModel(renderer, *m_model, m_cube.programId, uniforms);
   }
 
   void drawCamera(ca::Renderer* renderer, const ca::Mat4& finalMatrix, Camera* camera) {
@@ -352,10 +360,16 @@ public:
 
     nu::DynamicArray<ca::Vec4> pos;
     for (ca::Vec4& v : vertices) {
-      pos.pushBack([&camInverse, &v](ca::Vec4* storage) {
+#if 0
+      pos.constructBack([&camInverse, &v](ca::Vec4* storage) {
         *storage = camInverse * v;
         *storage /= storage->w;
       });
+#else
+      auto p = camInverse * v;
+      p /= p.w;
+      pos.emplaceBack(p);
+#endif
     }
 
     for (MemSize i = 0; i < 4; ++i) {
@@ -380,6 +394,9 @@ private:
   hi::ResourceManager m_resourceManager;
   hi::PhysicalFileResourceLocator m_physicalFileResourceLocator;
   SpriteConverter m_spriteConverter;
+  ModelConverter m_geometryConverter;
+
+  Model* m_model = nullptr;
 
   ca::LineRenderer m_lineRenderer;
 
@@ -394,7 +411,7 @@ private:
   F32 m_fieldOfViewMovement = 0.0f;
 
   struct {
-    Geometry geometry;
+    Model model;
     ca::ProgramId programId;
     ca::UniformId transformUniformId;
   } m_cube;
