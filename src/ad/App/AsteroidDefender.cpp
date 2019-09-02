@@ -1,5 +1,7 @@
 #include "ad/Geometry/Geometry.h"
 #include "ad/Geometry/ModelConverter.h"
+#include "ad/Geometry/ShaderSourceConverter.h"
+#include "ad/Geometry/TextureConverter.h"
 #include "ad/Sprites/SpriteConverter.h"
 #include "ad/Sprites/SpriteRenderer.h"
 #include "ad/World/CameraController.h"
@@ -93,10 +95,16 @@ public:
     m_spriteConverter.setRenderer(renderer);
     m_resourceManager.registerConverter(&m_spriteConverter);
 
-    m_geometryConverter.setRenderer(renderer);
-    m_resourceManager.registerConverter(&m_geometryConverter);
+    m_modelConverter.setRenderer(renderer);
+    m_resourceManager.registerConverter(&m_modelConverter);
 
-    m_model = m_resourceManager.get<Model>("cursor.dae");
+    m_textureConverter.setRenderer(renderer);
+    m_resourceManager.registerConverter(&m_textureConverter);
+
+    m_shaderSourceConverter.setRenderer(renderer);
+    m_resourceManager.registerConverter(&m_shaderSourceConverter);
+
+    m_model = m_resourceManager.get<Model>("command_center.dae");
 
     if (!m_ui.initialize(renderer)) {
       return false;
@@ -393,7 +401,9 @@ private:
   hi::ResourceManager m_resourceManager;
   hi::PhysicalFileResourceLocator m_physicalFileResourceLocator;
   SpriteConverter m_spriteConverter;
-  ModelConverter m_geometryConverter;
+  ModelConverter m_modelConverter;
+  TextureConverter m_textureConverter;
+  ShaderSourceConverter m_shaderSourceConverter;
 
   Model* m_model = nullptr;
 

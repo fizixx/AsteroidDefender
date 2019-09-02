@@ -60,9 +60,14 @@ bool createCube(Model* model, ca::Renderer* renderer) {
     return false;
   }
 
-  model->meshes.emplaceBack(vertexBufferId, indexBufferId,
-                            static_cast<U32>(sizeof(kCubeIndices) / sizeof(U16)),
-                            ca::DrawType::Triangles);
+  auto result = model->meshes.emplaceBack();
+  Mesh* mesh = &result.element();
+
+  mesh->materialIndex = 0;
+  mesh->vertexBufferId = vertexBufferId;
+  mesh->indexBufferId = indexBufferId;
+  mesh->numIndices = static_cast<U32>(sizeof(kCubeIndices) / sizeof(U16));
+  mesh->drawType = ca::DrawType::Triangles;
 
   model->rootNode.meshIndices.emplaceBack(0U);
 
@@ -74,13 +79,23 @@ static void renderNode(ca::Renderer* renderer, const Model& model, const Node& n
                        ca::UniformId transformUniformId) {
   ca::Mat4 t = transform * node.transform;
 
-  for (MemSize i = 0; i < node.meshIndices.size(); ++i) {
-    const Mesh& mesh = model.meshes[node.meshIndices[i]];
+  for (auto meshIndex : node.meshIndices) {
+    const Mesh& mesh = model.meshes[meshIndex];
+    const Material& material = model.materials[mesh.materialIndex];
 
+    // The material here might be null.
+
+    // Set up the material.
     ca::UniformBuffer uniforms;
-    uniforms.set(transformUniformId, t);
-    renderer->draw(mesh.drawType, mesh.numIndices, programId, mesh.vertexBufferId,
-                   mesh.indexBufferId, {}, uniforms);
+    uniforms.set(material.transformUniformId, t);
+
+    if (material.type == MaterialType::Textured) {
+      renderer->draw(mesh.drawType, mesh.numIndices, material.programId, mesh.vertexBufferId,
+                     mesh.indexBufferId, material.diffuse.texture->textureId, uniforms);
+    } else {
+      renderer->draw(mesh.drawType, mesh.numIndices, material.programId, mesh.vertexBufferId,
+                     mesh.indexBufferId, {}, uniforms);
+    }
   }
 
   for (const Node& childNode : node.children) {

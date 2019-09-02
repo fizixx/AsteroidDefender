@@ -1,24 +1,62 @@
 #include "ad/Geometry/ModelConverter.h"
 
+#include "Geometry.h"
+#include "hive/ResourceManager.h"
+#include "silhouette/Scene/Scene.h"
+
 static void createMesh(ca::Renderer* renderer, const ca::VertexDefinition& vertexDefinition,
                        si::Mesh* src, Mesh* dst) {
+  dst->materialIndex = src->materialIndex;
+
   struct V {
     ca::Vec3 position;
+    ca::Vec2 texCoords;
     ca::Color color;
   };
-  nu::DynamicArray<V> buffer{src->vertices.size()};
-  for (ca::Vec3& v : src->vertices) {
-    buffer.emplaceBack(v, ca::Color::red);
+
+  DCHECK(src->positions.size() == src->texCoords.size());
+
+  nu::DynamicArray<V> buffer{src->positions.size()};
+  for (MemSize i = 0; i < src->positions.size(); ++i) {
+    buffer.emplaceBack(src->positions[i], src->texCoords[i], ca::Color::red);
   }
 
-  auto vertexBufferId =
+  dst->vertexBufferId =
       renderer->createVertexBuffer(vertexDefinition, buffer.data(), buffer.size() * sizeof(V));
 
-  auto indexBufferId = renderer->createIndexBuffer(
+  dst->indexBufferId = renderer->createIndexBuffer(
       ca::ComponentType::Unsigned16, src->indices.data(), src->indices.size() * sizeof(U16));
 
-  new (dst) Mesh{vertexBufferId, indexBufferId, static_cast<U32>(src->vertices.size()),
-                 ca::DrawType::Triangles};
+  dst->numIndices = buffer.size();
+  dst->drawType = ca::DrawType::Triangles;
+}
+
+void createMaterial(ca::Renderer* renderer, hi::ResourceManager* resourceManager, si::Material* src,
+                    Material* dst) {
+  {
+    // Diffuse
+    dst->diffuse.color = src->diffuse.color;
+
+    if (!src->diffuse.texture.isEmpty()) {
+      dst->diffuse.texture = resourceManager->get<Texture>(src->diffuse.texture);
+    }
+  }
+
+  dst->type = MaterialType::DiffuseColor;
+  if (dst->diffuse.texture) {
+    dst->type = MaterialType::Textured;
+
+    auto vertexShader = resourceManager->get<ca::ShaderSource>("diffuse_texture.vs");
+    auto fragmentShader = resourceManager->get<ca::ShaderSource>("diffuse_texture.fs");
+
+    if (!vertexShader || !fragmentShader) {
+      LOG(Error) << "Could not load shader. (diffuse_texture)";
+    } else {
+      dst->programId = renderer->createProgram(*vertexShader, *fragmentShader);
+      dst->transformUniformId = renderer->createUniform("uTransform");
+      dst->diffuse.textureUniformId = renderer->createUniform("uTexture");
+    }
+  }
 }
 
 static void createNode(si::Node* src, Node* dst) {
@@ -36,11 +74,12 @@ static void createNode(si::Node* src, Node* dst) {
 ModelConverter::ModelConverter() {
   m_vertexDefinition.addAttribute(ca::ComponentType::Float32, ca::ComponentCount::Three,
                                   "position");
+  m_vertexDefinition.addAttribute(ca::ComponentType::Float32, ca::ComponentCount::Two, "texCoords");
   m_vertexDefinition.addAttribute(ca::ComponentType::Float32, ca::ComponentCount::Four, "color");
 }
 
-bool ModelConverter::load(hi::ResourceManager* UNUSED(resourceManager),
-                          nu::InputStream* inputStream, Model* model) {
+bool ModelConverter::load(hi::ResourceManager* resourceManager, nu::InputStream* inputStream,
+                          Model* model) {
   if (!m_renderer) {
     LOG(Error) << "Can not load geometry without a renderer.";
     return false;
@@ -61,6 +100,12 @@ bool ModelConverter::load(hi::ResourceManager* UNUSED(resourceManager),
   for (auto& sceneMesh : scene.meshes) {
     auto result = model->meshes.emplaceBack();
     createMesh(m_renderer, m_vertexDefinition, &sceneMesh, &result.element());
+  }
+
+  // Add all materials.
+  for (auto& sceneMaterial : scene.materials) {
+    auto result = model->materials.emplaceBack();
+    createMaterial(m_renderer, resourceManager, &sceneMaterial, &result.element());
   }
 
   // Add nodes.

@@ -13,8 +13,13 @@ set(AsteroidDefender_SOURCE_FILES
 
     src/ad/Geometry/Geometry.h
     src/ad/Geometry/Geometry.cpp
+    src/ad/Geometry/TextureConverter.h
+    src/ad/Geometry/TextureConverter.cpp
     src/ad/Geometry/ModelConverter.h
     src/ad/Geometry/ModelConverter.cpp
+    src/ad/Geometry/ShaderSourceConverter.h
+    src/ad/Geometry/ShaderSourceConverter.cpp
+    src/ad/Geometry/RendererConverter.h
 
     src/ad/Sprites/Sprite.h
     src/ad/Sprites/SpriteConverter.cpp
