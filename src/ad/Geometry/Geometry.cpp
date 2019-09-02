@@ -60,7 +60,7 @@ bool createCube(Model* model, ca::Renderer* renderer) {
     return false;
   }
 
-  model->meshes.emplace_back(vertexBufferId, indexBufferId,
+  model->meshes.emplaceBack(vertexBufferId, indexBufferId,
                             static_cast<U32>(sizeof(kCubeIndices) / sizeof(U16)),
                             ca::DrawType::Triangles);
 
@@ -69,19 +69,26 @@ bool createCube(Model* model, ca::Renderer* renderer) {
   return true;
 }
 
-UNUSED(static void renderNode(ca::Renderer* renderer, const Model& model, const Node& node,
-                              ca::ProgramId programId, const ca::UniformBuffer& uniforms) {
-  const Mesh& mesh = model.meshes[node.meshIndex];
+static void renderNode(ca::Renderer* renderer, const Model& model, const Node& node,
+                       const ca::Mat4& transform, ca::ProgramId programId,
+                       ca::UniformId transformUniformId) {
+  ca::Mat4 t = transform * node.transform;
 
-  renderer->draw(mesh.drawType, mesh.numIndices, programId, mesh.vertexBufferId, mesh.indexBufferId,
-                 {}, uniforms);
+  for (MemSize i = 0; i < node.meshIndices.size(); ++i) {
+    const Mesh& mesh = model.meshes[node.meshIndices[i]];
+
+    ca::UniformBuffer uniforms;
+    uniforms.set(transformUniformId, t);
+    renderer->draw(mesh.drawType, mesh.numIndices, programId, mesh.vertexBufferId,
+                   mesh.indexBufferId, {}, uniforms);
+  }
 
   for (const Node& childNode : node.children) {
-    renderNode(renderer, model, childNode, programId, uniforms);
+    renderNode(renderer, model, childNode, t, programId, transformUniformId);
   }
-})
+}
 
-void renderModel(ca::Renderer* UNUSED(renderer), const Model& UNUSED(model),
-                 ca::ProgramId UNUSED(programId), const ca::UniformBuffer& UNUSED(uniforms)) {
-  // renderNode(renderer, model, model.rootNode, programId, uniforms);
+void renderModel(ca::Renderer* renderer, const Model& model, const ca::Mat4& transform,
+                 ca::ProgramId programId, ca::UniformId transformUniformId) {
+  renderNode(renderer, model, model.rootNode, transform, programId, transformUniformId);
 }

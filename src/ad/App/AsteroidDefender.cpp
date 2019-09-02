@@ -96,7 +96,7 @@ public:
     m_geometryConverter.setRenderer(renderer);
     m_resourceManager.registerConverter(&m_geometryConverter);
 
-    m_model = m_resourceManager.get<Model>("command_center.dae");
+    m_model = m_resourceManager.get<Model>("cursor.dae");
 
     if (!m_ui.initialize(renderer)) {
       return false;
@@ -123,8 +123,8 @@ public:
 
     m_debugCamera.setFarPlane(5000.0f);
 
-    m_worldCamera.moveTo({0.0f, 0.0f, 150.0f});
-    m_worldCamera.setNearPlane(10.0f);
+    m_worldCamera.moveTo({0.0f, 0.0f, 5.0f});
+    m_worldCamera.setNearPlane(0.1f);
     m_worldCamera.setFarPlane(200.0f);
 
     return true;
@@ -259,6 +259,7 @@ public:
     }
 
     // Render
+#if 0
     for (I32 z = -5; z <= 5; ++z) {
       for (I32 y = -5; y <= 5; ++y) {
         for (I32 x = -5; x <= 5; ++x) {
@@ -268,6 +269,7 @@ public:
         }
       }
     }
+#endif  // 0
 
     if (m_useDebugCamera) {
       drawCamera(renderer, finalMatrix, &m_worldCamera);
@@ -312,8 +314,6 @@ public:
 
   void drawCube(ca::Renderer* renderer, const ca::Vec3& position, const ca::Quaternion& orientation,
                 const ca::Mat4& finalMatrix) {
-    ca::UniformBuffer uniforms;
-
     ca::Mat4 modelTranslation = translationMatrix(position);
     ca::Mat4 modelRotation{orientation.toRotationMatrix()};
     ca::Mat4 modelScale = ca::scaleMatrix(0.5f);
@@ -322,10 +322,9 @@ public:
 
     ca::Mat4 final = finalMatrix * model;
 
-    uniforms.set(m_cube.transformUniformId, final);
-    renderModel(renderer, m_cube.model, m_cube.programId, uniforms);
+    // renderModel(renderer, m_cube.model, final, m_cube.programId, m_cube.transformUniformId);
 
-    renderModel(renderer, *m_model, m_cube.programId, uniforms);
+    renderModel(renderer, *m_model, final, m_cube.programId, m_cube.transformUniformId);
   }
 
   void drawCamera(ca::Renderer* renderer, const ca::Mat4& finalMatrix, Camera* camera) {

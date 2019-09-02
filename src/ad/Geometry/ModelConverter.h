@@ -9,10 +9,7 @@
 
 class ModelConverter : public hi::Converter<Model> {
 public:
-  ModelConverter() {
-    m_vertexDefinition.addAttribute(ca::ComponentType::Float32, ca::ComponentCount::Three,
-                                    "position");
-  }
+  ModelConverter();
 
   void setRenderer(ca::Renderer* renderer) {
     m_renderer = renderer;

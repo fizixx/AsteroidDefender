@@ -16,8 +16,6 @@ class UniformBuffer;
 }  // namespace ca
 
 struct Mesh {
-  // DELETE_COPY(Mesh);
-
   ca::VertexBufferId vertexBufferId;
   ca::IndexBufferId indexBufferId;
   U32 numIndices;
@@ -34,8 +32,6 @@ struct Mesh {
 };
 
 struct Node {
-  // DELETE_COPY(Node);
-
   ca::Mat4 transform;
   nu::DynamicArray<MemSize> meshIndices;
   std::vector<Node> children;
@@ -45,16 +41,13 @@ struct Node {
 };
 
 struct Model {
-  // DELETE_COPY(Model);
-
-  // nu::DynamicArray<Mesh> meshes;
-  std::vector<Mesh> meshes;
+  nu::DynamicArray<Mesh> meshes;
   Node rootNode;
 };
 
 bool createCube(Model* model, ca::Renderer* renderer);
 
-void renderModel(ca::Renderer* renderer, const Model& model, ca::ProgramId programId,
-                 const ca::UniformBuffer& uniforms);
+void renderModel(ca::Renderer* renderer, const Model& model, const ca::Mat4& transform,
+                 ca::ProgramId programId, ca::UniformId transformUniformId);
 
 #endif  // AD_GEOMETRY_GEOMETRY_H_

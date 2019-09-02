@@ -48,7 +48,7 @@ EntityId World::createCursor() {
     entity->sprite = m_cursorSprite;
   });
 #else
-  auto result = m_entities.emplaceBack(ca::Vec2{0.0f, 0.0f}, 5.0f, m_cursorSprite);
+  auto result = m_entities.emplaceBack(ca::Vec2{0.0f, 0.0f}, 0.1f, m_cursorSprite);
 #endif
 
   return result.index();
