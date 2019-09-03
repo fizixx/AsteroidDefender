@@ -1,3 +1,4 @@
+#include "ad/Geometry/Converters.h"
 #include "ad/Geometry/Geometry.h"
 #include "ad/Geometry/ModelConverter.h"
 #include "ad/Geometry/ShaderSourceConverter.h"
@@ -92,19 +93,9 @@ public:
     m_physicalFileResourceLocator.setRootPath(assetsPath);
     m_resourceManager.addResourceLocatorBack(&m_physicalFileResourceLocator);
 
-    m_spriteConverter.setRenderer(renderer);
-    m_resourceManager.registerConverter(&m_spriteConverter);
+    m_converters.registerConverters(&m_resourceManager, renderer);
 
-    m_modelConverter.setRenderer(renderer);
-    m_resourceManager.registerConverter(&m_modelConverter);
-
-    m_textureConverter.setRenderer(renderer);
-    m_resourceManager.registerConverter(&m_textureConverter);
-
-    m_shaderSourceConverter.setRenderer(renderer);
-    m_resourceManager.registerConverter(&m_shaderSourceConverter);
-
-    m_model = m_resourceManager.get<Model>("command_center.dae");
+    m_model = m_resourceManager.get<Model>("box.dae");
 
     if (!m_ui.initialize(renderer)) {
       return false;
@@ -400,10 +391,6 @@ private:
 
   hi::ResourceManager m_resourceManager;
   hi::PhysicalFileResourceLocator m_physicalFileResourceLocator;
-  SpriteConverter m_spriteConverter;
-  ModelConverter m_modelConverter;
-  TextureConverter m_textureConverter;
-  ShaderSourceConverter m_shaderSourceConverter;
 
   Model* m_model = nullptr;
 
@@ -418,6 +405,8 @@ private:
   World m_world;
 
   F32 m_fieldOfViewMovement = 0.0f;
+
+  Converters m_converters;
 
   struct {
     Model model;

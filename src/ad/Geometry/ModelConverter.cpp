@@ -27,7 +27,7 @@ static void createMesh(ca::Renderer* renderer, const ca::VertexDefinition& verte
   dst->indexBufferId = renderer->createIndexBuffer(
       ca::ComponentType::Unsigned16, src->indices.data(), src->indices.size() * sizeof(U16));
 
-  dst->numIndices = buffer.size();
+  dst->numIndices = static_cast<U32>(buffer.size());
   dst->drawType = ca::DrawType::Triangles;
 }
 
