@@ -1,9 +1,6 @@
 #include "ad/Geometry/Converters.h"
 #include "ad/Geometry/Geometry.h"
-#include "ad/Geometry/ModelConverter.h"
 #include "ad/Geometry/ShaderSourceConverter.h"
-#include "ad/Geometry/TextureConverter.h"
-#include "ad/Sprites/SpriteConverter.h"
 #include "ad/Sprites/SpriteRenderer.h"
 #include "ad/World/CameraController.h"
 #include "ad/World/TopDownCameraController.h"
@@ -71,10 +68,12 @@ public:
     ca::Renderer* renderer = window->getRenderer();
     m_lineRenderer.initialize(renderer);
 
+#if 0
     if (!createCube(&m_cube.model, renderer)) {
       LOG(Error) << "Could not create cube.";
       return false;
     }
+#endif
 
     nu::WrappedMemoryInputStream vertexStream{kCubeVertexShaderSource,
                                               nu::StringView{kCubeVertexShaderSource}.getLength()};
@@ -84,9 +83,9 @@ public:
         kCubeFragmentShaderSource, nu::StringView{kCubeFragmentShaderSource}.getLength()};
     auto fss = ca::ShaderSource::from(&fragmentStream);
 
-    m_cube.programId = renderer->createProgram(vss, fss);
+    //    m_cube.programId = renderer->createProgram(vss, fss);
 
-    m_cube.transformUniformId = renderer->createUniform("uTransform");
+    //    m_cube.transformUniformId = renderer->createUniform("uTransform");
 
     auto assetsPath = nu::getCurrentWorkingDirectory() / "assets";
     LOG(Info) << "Assets path: " << assetsPath.getPath();
@@ -95,7 +94,7 @@ public:
 
     m_converters.registerConverters(&m_resourceManager, renderer);
 
-    m_model = m_resourceManager.get<Model>("box.dae");
+    m_model = m_resourceManager.get<Model>("cursor.dae");
 
     if (!m_ui.initialize(renderer)) {
       return false;
@@ -258,20 +257,9 @@ public:
     }
 
     // Render
-#if 0
-    for (I32 z = -5; z <= 5; ++z) {
-      for (I32 y = -5; y <= 5; ++y) {
-        for (I32 x = -5; x <= 5; ++x) {
-          const ca::Vec3& position =
-              ca::Vec3{static_cast<F32>(x), static_cast<F32>(y), static_cast<F32>(z)};
-          drawCube(renderer, position, ca::Quaternion::identity, finalMatrix);
-        }
-      }
-    }
-#endif  // 0
 
     if (m_useDebugCamera) {
-      drawCamera(renderer, finalMatrix, &m_worldCamera);
+      drawCamera(&m_worldCamera);
     }
 
     ca::Plane worldPlane{-ca::Vec3::forward, 0.0f};
@@ -282,7 +270,10 @@ public:
 
       auto intersection = ca::intersection(worldPlane, mouseRay);
 
-      drawCube(renderer, intersection.position, ca::Quaternion::identity, finalMatrix);
+      drawModel(renderer, intersection.position,
+                ca::Quaternion::fromEulerAngles(ca::degrees(45.0f), ca::degrees(45.0f),
+                                                ca::degrees(45.0f)),
+                finalMatrix);
 
       ca::Vec3 p1 = mouseRay.origin;
       ca::Vec3 p2 = mouseRay.origin +
@@ -306,13 +297,13 @@ public:
     } else {
       m_spriteRenderer.beginFrame(&m_worldCamera);
     }
-    m_world.render(&m_spriteRenderer);
+    // m_world.render(&m_spriteRenderer);
 
     m_ui.render(renderer);
   }
 
-  void drawCube(ca::Renderer* renderer, const ca::Vec3& position, const ca::Quaternion& orientation,
-                const ca::Mat4& finalMatrix) {
+  void drawModel(ca::Renderer* renderer, const ca::Vec3& position,
+                 const ca::Quaternion& orientation, const ca::Mat4& finalMatrix) {
     ca::Mat4 modelTranslation = translationMatrix(position);
     ca::Mat4 modelRotation{orientation.toRotationMatrix()};
     ca::Mat4 modelScale = ca::scaleMatrix(0.5f);
@@ -323,11 +314,11 @@ public:
 
     // renderModel(renderer, m_cube.model, final, m_cube.programId, m_cube.transformUniformId);
 
-    renderModel(renderer, *m_model, final, m_cube.programId, m_cube.transformUniformId);
+    renderModel(renderer, *m_model, final);
   }
 
-  void drawCamera(ca::Renderer* renderer, const ca::Mat4& finalMatrix, Camera* camera) {
-    drawCube(renderer, camera->position(), camera->orientation(), finalMatrix);
+  void drawCamera(Camera* camera) {
+    // drawModel(renderer, camera->position(), camera->orientation(), finalMatrix);
 
     m_lineRenderer.renderLine(camera->position(), camera->position() + camera->forward(),
                               ca::Color::red);
@@ -358,16 +349,9 @@ public:
 
     nu::DynamicArray<ca::Vec4> pos;
     for (ca::Vec4& v : vertices) {
-#if 0
-      pos.constructBack([&camInverse, &v](ca::Vec4* storage) {
-        *storage = camInverse * v;
-        *storage /= storage->w;
-      });
-#else
       auto p = camInverse * v;
       p /= p.w;
       pos.emplaceBack(p);
-#endif
     }
 
     for (MemSize i = 0; i < 4; ++i) {
@@ -407,12 +391,6 @@ private:
   F32 m_fieldOfViewMovement = 0.0f;
 
   Converters m_converters;
-
-  struct {
-    Model model;
-    ca::ProgramId programId;
-    ca::UniformId transformUniformId;
-  } m_cube;
 
   Camera m_worldCamera{ca::degrees(60.0f)};
   TopDownCameraController m_topDownCameraController{

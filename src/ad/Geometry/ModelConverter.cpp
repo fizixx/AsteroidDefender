@@ -21,13 +21,18 @@ static void createMesh(ca::Renderer* renderer, const ca::VertexDefinition& verte
     buffer.emplaceBack(src->positions[i], src->texCoords[i], ca::Color::red);
   }
 
+  for (const auto& v : buffer) {
+    LOG(Info) << "position = " << v.position << ", color = " << v.color
+              << ", texCoords = " << v.texCoords;
+  }
+
   dst->vertexBufferId =
       renderer->createVertexBuffer(vertexDefinition, buffer.data(), buffer.size() * sizeof(V));
 
-  dst->indexBufferId = renderer->createIndexBuffer(
-      ca::ComponentType::Unsigned16, src->indices.data(), src->indices.size() * sizeof(U16));
+  U32 vertexCount = static_cast<U32>(buffer.size());
+  DCHECK(vertexCount % 3 == 0);
 
-  dst->numIndices = static_cast<U32>(buffer.size());
+  dst->vertexCount = vertexCount;
   dst->drawType = ca::DrawType::Triangles;
 }
 

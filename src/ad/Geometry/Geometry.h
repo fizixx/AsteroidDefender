@@ -41,13 +41,10 @@ struct Material {
 };
 
 struct Mesh {
-  MemSize materialIndex;
+  MemSize materialIndex = 0;
+  ca::DrawType drawType = ca::DrawType::Triangles;
+  U32 vertexCount = 0;
   ca::VertexBufferId vertexBufferId;
-  ca::IndexBufferId indexBufferId;
-  U32 numIndices;
-  ca::DrawType drawType;
-
-  Mesh() : materialIndex{0}, numIndices{0}, drawType{ca::DrawType::Triangles} {}
 };
 
 struct Node {
@@ -65,9 +62,6 @@ struct Model {
   Node rootNode;
 };
 
-bool createCube(Model* model, ca::Renderer* renderer);
-
-void renderModel(ca::Renderer* renderer, const Model& model, const ca::Mat4& transform,
-                 ca::ProgramId programId, ca::UniformId transformUniformId);
+void renderModel(ca::Renderer* renderer, const Model& model, const ca::Mat4& transform);
 
 #endif  // AD_GEOMETRY_GEOMETRY_H_
