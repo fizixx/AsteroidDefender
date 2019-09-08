@@ -100,7 +100,11 @@ public:
       return false;
     }
 
-#if OS(MACOSX)
+#if OS(POSIX)
+    nu::FileInputStream fontStream{nu::FilePath {
+      "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+    }};
+#elif OS(MACOSX)
     nu::FileInputStream fontStream{nu::FilePath { R"(/Library/Fonts/Arial.ttf)" }};
 #else
     nu::FileInputStream fontStream{nu::FilePath{R"(C:\Windows\Fonts\Arial.ttf)"}};
