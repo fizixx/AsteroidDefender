@@ -18,8 +18,8 @@ public:
   static F32 aspectRatioFromScreenSize(const ca::Size& size);
 
   // Construct the camera with a world up vector.  The default up vector is the positive Y axis.
-  explicit Camera(ca::Angle fieldOfView = ca::degrees(45.0f), F32 aspectRatio = 1.0f,
-                  const ca::Vec3& worldUp = ca::Vec3::up);
+  explicit Camera(ca::Angle fieldOfView = ca::degrees(45.0f),
+                  const ca::Vec3& worldUp = ca::Vec3::up, F32 aspectRatio = 1.0f);
 
   // Return the current aspect ratio.
   F32 aspectRatio() const {

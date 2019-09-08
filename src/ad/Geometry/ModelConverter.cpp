@@ -21,10 +21,12 @@ static void createMesh(ca::Renderer* renderer, const ca::VertexDefinition& verte
     buffer.emplaceBack(src->positions[i], src->texCoords[i], ca::Color::red);
   }
 
+#if 0
   for (const auto& v : buffer) {
     LOG(Info) << "position = " << v.position << ", color = " << v.color
               << ", texCoords = " << v.texCoords;
   }
+#endif
 
   dst->vertexBufferId =
       renderer->createVertexBuffer(vertexDefinition, buffer.data(), buffer.size() * sizeof(V));

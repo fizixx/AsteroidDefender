@@ -22,12 +22,6 @@ set(AsteroidDefender_SOURCE_FILES
     src/ad/Geometry/RendererConverter.h
     src/ad/Geometry/Converters.h
 
-    src/ad/Sprites/Sprite.h
-    src/ad/Sprites/SpriteConverter.cpp
-    src/ad/Sprites/SpriteConverter.h
-    src/ad/Sprites/SpriteRenderer.cpp
-    src/ad/Sprites/SpriteRenderer.h
-
     src/ad/World/Camera.cpp
     src/ad/World/Camera.h
     src/ad/World/TopDownCameraController.h

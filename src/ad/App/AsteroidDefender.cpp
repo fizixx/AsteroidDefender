@@ -1,7 +1,6 @@
 #include "ad/Geometry/Converters.h"
 #include "ad/Geometry/Geometry.h"
 #include "ad/Geometry/ShaderSourceConverter.h"
-#include "ad/Sprites/SpriteRenderer.h"
 #include "ad/World/CameraController.h"
 #include "ad/World/TopDownCameraController.h"
 #include "ad/World/World.h"
@@ -66,7 +65,10 @@ public:
     }
 
     ca::Renderer* renderer = window->getRenderer();
+
+#if 0
     m_lineRenderer.initialize(renderer);
+#endif
 
 #if 0
     if (!createCube(&m_cube.model, renderer)) {
@@ -94,7 +96,11 @@ public:
 
     m_converters.registerConverters(&m_resourceManager, renderer);
 
-    m_model = m_resourceManager.get<Model>("cursor.dae");
+    m_model = m_resourceManager.get<Model>("miner/miner.dae");
+    if (!m_model) {
+      LOG(Error) << "Could not load model.";
+      return false;
+    }
 
     if (!m_ui.initialize(renderer)) {
       return false;
@@ -115,13 +121,12 @@ public:
       return false;
     }
 
-    if (!m_spriteRenderer.initialize(renderer)) {
+    if (!m_world.initialize(&m_resourceManager)) {
+      LOG(Error) << "Could not initialize world.";
       return false;
     }
 
-    if (!m_world.initialize(&m_resourceManager)) {
-      return false;
-    }
+    m_world.generate();
 
     m_debugCamera.setFarPlane(5000.0f);
 
@@ -221,7 +226,9 @@ public:
   }
 
   void onRender(ca::Renderer* renderer) override {
+#if 0
     m_lineRenderer.beginFrame();
+#endif
 
 #if 1
     glEnable(GL_DEPTH_TEST);
@@ -274,11 +281,11 @@ public:
 
       auto intersection = ca::intersection(worldPlane, mouseRay);
 
-      drawModel(renderer, intersection.position,
-                ca::Quaternion::fromEulerAngles(ca::degrees(45.0f), ca::degrees(45.0f),
-                                                ca::degrees(45.0f)),
-                finalMatrix);
+      // ca::Quaternion::fromEulerAngles(ca::degrees(45.0f), ca::degrees(45.0f), ca::degrees(45.0f))
 
+      drawModel(renderer, intersection.position, ca::Quaternion::identity, finalMatrix);
+
+#if 0
       ca::Vec3 p1 = mouseRay.origin;
       ca::Vec3 p2 = mouseRay.origin +
                     mouseRay.direction * (m_worldCamera.farPlane() + m_worldCamera.nearPlane());
@@ -286,22 +293,18 @@ public:
       m_lineRenderer.renderLine(p1, p2, ca::Color::red);
       m_lineRenderer.renderLine(ca::Vec3::zero, p1, ca::Color::green);
       m_lineRenderer.renderLine(ca::Vec3::zero, p2, ca::Color::blue);
+#endif
     }
 
+#if 0
     m_lineRenderer.renderGrid(worldPlane, ca::Vec3::up, ca::Color{1.0f, 1.0f, 1.0f, 0.1f}, 20,
                               1.0f);
 
     m_lineRenderer.render(finalMatrix);
+#endif
 
     glDisable(GL_DEPTH_TEST);
 #endif  // 0
-
-    if (m_useDebugCamera) {
-      m_spriteRenderer.beginFrame(&m_debugCamera);
-    } else {
-      m_spriteRenderer.beginFrame(&m_worldCamera);
-    }
-    // m_world.render(&m_spriteRenderer);
 
     m_ui.render(renderer);
   }
@@ -319,17 +322,22 @@ public:
     // renderModel(renderer, m_cube.model, final, m_cube.programId, m_cube.transformUniformId);
 
     renderModel(renderer, *m_model, final);
+
+    Camera* camera = m_useDebugCamera ? &m_debugCamera : &m_worldCamera;
+    m_world.render(renderer, camera);
   }
 
   void drawCamera(Camera* camera) {
     // drawModel(renderer, camera->position(), camera->orientation(), finalMatrix);
 
+#if 0
     m_lineRenderer.renderLine(camera->position(), camera->position() + camera->forward(),
                               ca::Color::red);
     m_lineRenderer.renderLine(camera->position(), camera->position() + camera->right(),
                               ca::Color::green);
     m_lineRenderer.renderLine(camera->position(), camera->position() + camera->up(),
                               ca::Color::blue);
+#endif  // 0
 
     // Draw the frustum.
     ca::Mat4 camProjection = ca::Mat4::identity;
@@ -358,11 +366,13 @@ public:
       pos.emplaceBack(p);
     }
 
+#if 0
     for (MemSize i = 0; i < 4; ++i) {
       m_lineRenderer.renderLine(pos[0 + i].xyz(), pos[0 + ((i + 1) % 4)].xyz(), ca::Color::white);
       m_lineRenderer.renderLine(pos[4 + i].xyz(), pos[4 + ((i + 1) % 4)].xyz(), ca::Color::white);
       m_lineRenderer.renderLine(pos[i].xyz(), pos[4 + i].xyz(), ca::Color::white);
     }
+#endif
   }
 
 private:
@@ -382,23 +392,22 @@ private:
 
   Model* m_model = nullptr;
 
-  ca::LineRenderer m_lineRenderer;
+  // ca::LineRenderer m_lineRenderer;
 
   el::Font m_font;
   el::Context m_ui;
 
   el::LabelView* m_cameraLabel = nullptr;
 
-  SpriteRenderer m_spriteRenderer;
   World m_world;
 
   F32 m_fieldOfViewMovement = 0.0f;
 
   Converters m_converters;
 
-  Camera m_worldCamera{ca::degrees(60.0f)};
+  Camera m_worldCamera{ca::degrees(45.0f), {0.0f, 0.0f, 1.0f}};
   TopDownCameraController m_topDownCameraController{
-      &m_worldCamera, {ca::Vec3::forward, 0.0f}, 100.0f};
+      &m_worldCamera, {ca::Vec3::forward, 0.0f}, 25.0f};
 
   bool m_useDebugCamera = false;
   Camera m_debugCamera;

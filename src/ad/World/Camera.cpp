@@ -28,7 +28,7 @@ F32 Camera::aspectRatioFromScreenSize(const ca::Size& size) {
   return (size.height > 0) ? static_cast<F32>(size.width) / static_cast<F32>(size.height) : 1.0f;
 }
 
-Camera::Camera(ca::Angle fieldOfView, F32 aspectRatio, const ca::Vec3& worldUp)
+Camera::Camera(ca::Angle fieldOfView, const ca::Vec3& worldUp, F32 aspectRatio)
   : m_worldUp{ca::normalize(worldUp)}, m_fieldOfView{fieldOfView}, m_aspectRatio{aspectRatio} {
   updateProjectionMatrix();
   updateViewMatrix();

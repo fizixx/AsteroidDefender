@@ -1,38 +1,51 @@
 #ifndef WORLD_H_
 #define WORLD_H_
 
-#include "ad/Sprites/SpriteRenderer.h"
-#include "ad/World/Camera.h"
 #include "ad/World/Entity.h"
-#include "canvas/Renderer/Renderer.h"
-#include "canvas/Windows/Event.h"
-#include "hive/ResourceManager.h"
-#include "nucleus/FilePath.h"
+#include "nucleus/Containers/DynamicArray.h"
 #include "nucleus/Macros.h"
+
+namespace ca {
+class Renderer;
+}
+
+namespace hi {
+class ResourceManager;
+}
+
+class Camera;
 
 class World {
 public:
   World() = default;
   ~World() = default;
 
+  bool initialize(hi::ResourceManager* resourceManager);
+  void generate();
+
   void setCursorPosition(const ca::Vec2& position);
 
-  bool initialize(hi::ResourceManager* resourceManager);
   void tick(F32 delta);
-  void render(SpriteRenderer* spriteRenderer);
+  void render(ca::Renderer* renderer, Camera* camera);
 
 private:
   DELETE_COPY_AND_MOVE(World);
 
-  EntityId createCursor();
-  EntityId createCommandCenter(const ca::Vec2& position);
+  bool loadModels(hi::ResourceManager* resourceManager);
 
-  ca::Vec2 m_cursorPosition{0.0f, 0.0f};
+  EntityId createCommandCenter();
+  EntityId createMiner(const ca::Vec2& position);
+  EntityId createAsteroid(const ca::Vec2& position);
+  EntityId createEnemy(const ca::Vec2& position);
 
-  Sprite* m_cursorSprite = nullptr;
-  Sprite* m_commandCenterSprite = nullptr;
+  struct {
+    Model* commandCenter = nullptr;
+    Model* miner = nullptr;
+    Model* asteroid = nullptr;
+    Model* enemy = nullptr;
+  } m_models;
 
-  EntityId m_cursorEntityId = kInvalidEntityId;
+  ca::Vec2 m_cursorPosition{ca::Vec2::zero};
 
   nu::DynamicArray<Entity> m_entities;
 };

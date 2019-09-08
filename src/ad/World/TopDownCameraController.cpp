@@ -9,10 +9,9 @@ TopDownCameraController::TopDownCameraController(Camera* camera, const ca::Plane
   : m_camera{camera}, m_worldPlane{worldPlane}, m_height{height} {}
 
 void TopDownCameraController::tick(F32 delta) {
+  auto pos = m_camera->position();
+  m_camera->moveTo(ca::Vec3{pos.xy(), m_height});
   m_camera->moveBy(m_movement.direction * delta);
-
-  // TODO: fix
-  m_height = 1.0f;
 }
 
 void TopDownCameraController::onMouseMoved(const ca::Vec2& position) {
@@ -40,7 +39,8 @@ void TopDownCameraController::onMouseReleased(ca::MouseEvent::Button button,
 }
 
 void TopDownCameraController::onMouseWheel(const ca::Vec2& offset) {
-  m_camera->setFieldOfView(m_camera->fieldOfView() + ca::degrees(-offset.y));
+  // m_camera->setFieldOfView(m_camera->fieldOfView() + ca::degrees(-offset.y));
+  m_height += -offset.y;
 }
 
 void TopDownCameraController::onKeyPressed(ca::Key key) {

@@ -1,18 +1,31 @@
-#ifndef GEOMETRY_H_
-#define GEOMETRY_H_
+#ifndef AD_WORLD_ENTITY_H_
+#define AD_WORLD_ENTITY_H_
 
-#include "ad/Sprites/Sprite.h"
+#include "canvas/Math/Common.h"
 #include "canvas/Math/Vec2.h"
 
-using EntityId = MemSize;
+struct Model;
 
-const EntityId kInvalidEntityId = std::numeric_limits<EntityId>::max();
+const MemSize kInvalidEntityId = std::numeric_limits<MemSize>::max();
 
-struct Entity {
-  ca::Vec2 position;
-  F32 scale;
+struct EntityId {
+  MemSize id = kInvalidEntityId;
 
-  Sprite* sprite;
+  bool isValid() {
+    return id != kInvalidEntityId;
+  }
 };
 
-#endif  // GEOMETRY_H_
+struct Entity {
+  ca::Vec2 position = ca::Vec2::zero;
+  Model* model = nullptr;
+
+  struct {
+    ca::Angle direction = ca::degrees(0.0f);
+    F32 speed = 0.0f;
+
+    F32 distanceTravelled = 0.0f;
+  } movement;
+};
+
+#endif  // AD_WORLD_ENTITY_H_

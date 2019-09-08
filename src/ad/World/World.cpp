@@ -1,69 +1,153 @@
 #include "World.h"
 
-#include "nucleus/Streams/FileInputStream.h"
+#include "ad/Geometry/Geometry.h"
+#include "ad/World/Camera.h"
+#include "canvas/Math/Common.h"
+#include "canvas/Math/Transform.h"
+#include "hive/ResourceManager.h"
 
 bool World::initialize(hi::ResourceManager* resourceManager) {
-  m_cursorSprite = resourceManager->get<Sprite>("cursor.png");
-  if (!m_cursorSprite) {
-    LOG(Error) << "Could not load cursor sprite.";
+  if (!loadModels(resourceManager)) {
+    LOG(Error) << "Could not load world models.";
     return false;
   }
-
-  m_commandCenterSprite = resourceManager->get<Sprite>("command_center.png");
-  if (!m_commandCenterSprite) {
-    LOG(Error) << "Could not load command center sprite.";
-    return false;
-  }
-
-  m_cursorEntityId = createCursor();
-  createCommandCenter({0.0f, 0.0f});
-  createCommandCenter({20.0f, 0.0f});
-  createCommandCenter({-20.0f, 0.0f});
-  createCommandCenter({0.0f, 20.0f});
-  createCommandCenter({0.0f, -20.0f});
 
   return true;
 }
 
-void World::setCursorPosition(const ca::Vec2& position) {
-  // LOG(Info) << "new cursor position: " << position;
-  m_cursorPosition = position;
-}
+void World::generate() {
+  m_entities.clear();
 
-void World::tick(F32 UNUSED(delta)) {
-  m_entities[m_cursorEntityId].position = m_cursorPosition;
-}
+  createCommandCenter();
 
-void World::render(SpriteRenderer* spriteRenderer) {
-  for (Entity& entity : m_entities) {
-    spriteRenderer->renderSprite(entity.sprite, entity.position, entity.scale);
+  createMiner(ca::Vec2{10.0f, 10.0f});
+  createMiner(ca::Vec2{5.0f, 10.0f});
+  createMiner(ca::Vec2{-5.0f, 5.0f});
+
+  for (U32 i = 0; i < 50; ++i) {
+    ca::Angle theta = ca::degrees((F32)(std::rand() % 360));
+    F32 distance = (F32)(std::rand() % 100);
+    createAsteroid(ca::Vec2{ca::cosine(theta) * distance, ca::sine(theta) * distance});
+  }
+
+  for (U32 i = 0; i < 50; ++i) {
+    ca::Angle theta = ca::degrees((F32)(std::rand() % 360));
+    F32 distance = (F32)(std::rand() % 100);
+    createEnemy(ca::Vec2{ca::cosine(theta) * distance, ca::sine(theta) * distance});
   }
 }
 
-EntityId World::createCursor() {
-#if 0
-  auto result = m_entities.constructBack([this](Entity* entity) {
-    entity->position = {0.0f, 0.0f};
-    entity->scale = 5.0f;
-    entity->sprite = m_cursorSprite;
-  });
-#else
-  auto result = m_entities.emplaceBack(ca::Vec2{0.0f, 0.0f}, 0.1f, m_cursorSprite);
-#endif
-
-  return result.index();
+void World::setCursorPosition(const ca::Vec2& position) {
+  m_cursorPosition = position;
 }
 
-EntityId World::createCommandCenter(const ca::Vec2& position) {
-#if 0
-  auto result = m_entities.constructBack([this, &position](Entity* entity) {
-    entity->position = position;
-    entity->scale = 10.0f;
-    entity->sprite = m_commandCenterSprite;
-  });
-#else
-  auto result = m_entities.emplaceBack(position, 10.0f, m_commandCenterSprite);
-#endif  // 0
+void World::tick(F32 delta) {
+  for (auto& entity : m_entities) {
 
-  return result.index();
+    if (entity.movement.speed > 0.0f) {
+      ca::Vec2 d{ca::cosine(entity.movement.direction), ca::sine(entity.movement.direction)};
+      F32 distance = entity.movement.speed * 0.01f * delta;
+      entity.position += d * distance;
+
+      entity.movement.distanceTravelled += distance;
+
+      if (entity.movement.distanceTravelled > 5.0f) {
+        entity.movement.direction = ca::degrees((F32)(std::rand() % 360));
+        entity.movement.distanceTravelled = 0.0f;
+      }
+    }
+  }
+}
+
+bool World::loadModels(hi::ResourceManager* resourceManager) {
+  m_models.commandCenter = resourceManager->get<Model>("command_center.dae");
+  if (!m_models.commandCenter) {
+    LOG(Error) << "Could not load command center model.";
+    return false;
+  }
+
+  m_models.miner = resourceManager->get<Model>("miner/miner.dae");
+  if (!m_models.miner) {
+    LOG(Error) << "Could not load miner model.";
+    return false;
+  }
+
+  m_models.asteroid = resourceManager->get<Model>("asteroid.dae");
+  if (!m_models.asteroid) {
+    LOG(Error) << "Could not load asteroid model.";
+    return false;
+  }
+
+  m_models.enemy = resourceManager->get<Model>("enemy.dae");
+  if (!m_models.enemy) {
+    LOG(Error) << "Could not load enemy model.";
+    return false;
+  }
+
+  return true;
+}
+
+EntityId World::createCommandCenter() {
+  auto result = m_entities.emplaceBack();
+
+  Entity& entity = result.element();
+
+  entity.position = ca::Vec2::zero;
+  entity.model = m_models.commandCenter;
+
+  return EntityId{result.index()};
+}
+
+EntityId World::createMiner(const ca::Vec2& position) {
+  auto result = m_entities.emplaceBack();
+
+  Entity& entity = result.element();
+
+  entity.position = position;
+  entity.model = m_models.miner;
+
+  return EntityId{result.index()};
+}
+
+EntityId World::createAsteroid(const ca::Vec2& position) {
+  auto result = m_entities.emplaceBack();
+
+  Entity& entity = result.element();
+
+  entity.position = position;
+  entity.model = m_models.asteroid;
+
+  return EntityId{result.index()};
+}
+
+EntityId World::createEnemy(const ca::Vec2& position) {
+  auto result = m_entities.emplaceBack();
+
+  Entity& entity = result.element();
+
+  entity.position = position;
+  entity.model = m_models.enemy;
+
+  entity.movement.direction = ca::degrees((F32)(std::rand() % 360));
+  entity.movement.speed = 1.0f + (F32)(std::rand() % 2);
+
+  return EntityId{result.index()};
+}
+
+void World::render(ca::Renderer* renderer, Camera* camera) {
+  ca::Mat4 projection = ca::Mat4::identity;
+  camera->updateProjectionMatrix(&projection);
+
+  ca::Mat4 view = ca::Mat4::identity;
+  camera->updateViewMatrix(&view);
+
+  auto m = projection * view;
+
+  for (auto& entity : m_entities) {
+    auto translation = ca::translationMatrix(ca::Vec3{ entity.position, 0.0f });
+    auto rotation = ca::rotationMatrix(ca::Vec3{0.0f, 0.0f, 1.0f}, entity.movement.direction);
+
+    auto final = m * ca::createModelMatrix(translation, rotation, ca::Mat4::identity);
+    renderModel(renderer, *entity.model, final);
+  }
 }
