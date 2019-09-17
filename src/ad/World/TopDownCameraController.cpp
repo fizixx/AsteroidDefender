@@ -6,7 +6,7 @@ constexpr F32 kKeyboardSensitivity = 0.5f;
 
 TopDownCameraController::TopDownCameraController(Camera* camera, const ca::Plane& worldPlane,
                                                  F32 height)
-  : m_camera{camera}, m_worldPlane{worldPlane}, m_height{height} {}
+  : CameraController{camera}, m_worldPlane{worldPlane}, m_height{height} {}
 
 void TopDownCameraController::tick(F32 delta) {
   auto pos = m_camera->position();

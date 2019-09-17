@@ -1,14 +1,14 @@
-#include "ad/World/CameraController.h"
+#include "ad/World/FirstPersonCameraController.h"
 #include "ad/World/Camera.h"
 
-CameraController::CameraController(Camera* camera, F32 mouseSensitivity)
-  : m_camera(camera), m_mouseSensitivity{mouseSensitivity} {}
+FirstPersonCameraController::FirstPersonCameraController(Camera* camera, F32 mouseSensitivity)
+  : CameraController{camera}, m_mouseSensitivity{mouseSensitivity} {}
 
-void CameraController::onMouseMoved(const ca::MouseEvent& event) {
+void FirstPersonCameraController::onMouseMoved(const ca::Vec2& position) {
   if (m_mouseIsDown) {
     ca::Vec2 delta{
-        static_cast<F32>(event.pos.x - m_lastMousePosition.x),
-        static_cast<F32>(event.pos.y - m_lastMousePosition.y),
+        static_cast<F32>(position.x - m_lastMousePosition.x),
+        static_cast<F32>(position.y - m_lastMousePosition.y),
     };
 
     m_yaw += -delta.x * m_mouseSensitivity;
@@ -17,25 +17,29 @@ void CameraController::onMouseMoved(const ca::MouseEvent& event) {
     m_camera->rotateTo(ca::Quaternion::fromEulerAngles(ca::degrees(m_pitch), ca::degrees(m_yaw),
                                                        ca::degrees(0.0f)));
 
-    m_lastMousePosition = event.pos;
+    m_lastMousePosition = position;
   }
 }
 
-void CameraController::onMousePressed(const ca::MouseEvent& event) {
-  if (event.button == ca::MouseEvent::Left) {
+void FirstPersonCameraController::onMousePressed(ca::MouseEvent::Button button,
+                                                 const ca::Vec2& position) {
+  if (button == ca::MouseEvent::Left) {
     m_mouseIsDown = true;
-    m_lastMousePosition = event.pos;
+    m_lastMousePosition = position;
   }
 }
 
-void CameraController::onMouseReleased(const ca::MouseEvent& event) {
-  if (event.button == ca::MouseEvent::Left) {
+void FirstPersonCameraController::onMouseReleased(ca::MouseEvent::Button button,
+                                                  const ca::Vec2& position) {
+  if (button == ca::MouseEvent::Left) {
     m_mouseIsDown = false;
   }
 }
 
-void CameraController::onKeyPressed(const ca::KeyEvent& event) {
-  switch (event.key) {
+void FirstPersonCameraController::onMouseWheel(const ca::Vec2& offset) {}
+
+void FirstPersonCameraController::onKeyPressed(ca::Key key) {
+  switch (key) {
     case ca::Key::A:
       m_moveDirection.x -= 1.0f;
       break;
@@ -65,8 +69,8 @@ void CameraController::onKeyPressed(const ca::KeyEvent& event) {
   }
 }
 
-void CameraController::onKeyReleased(const ca::KeyEvent& event) {
-  switch (event.key) {
+void FirstPersonCameraController::onKeyReleased(ca::Key key) {
+  switch (key) {
     case ca::Key::A:
       m_moveDirection.x += 1.0f;
       break;
@@ -96,7 +100,7 @@ void CameraController::onKeyReleased(const ca::KeyEvent& event) {
   }
 }
 
-void CameraController::tick(F32 delta) {
+void FirstPersonCameraController::tick(F32 delta) {
   constexpr F32 kMovementSpeed = 0.1f;
 
   auto forwardMovement = m_camera->forward() * m_moveDirection.y;

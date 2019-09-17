@@ -63,6 +63,16 @@ void createMaterial(ca::Renderer* renderer, hi::ResourceManager* resourceManager
       dst->transformUniformId = renderer->createUniform("uTransform");
       dst->diffuse.textureUniformId = renderer->createUniform("uTexture");
     }
+  } else {
+    auto vertexShader = resourceManager->get<ca::ShaderSource>("diffuse_lopoly.vs");
+    auto fragmentShader = resourceManager->get<ca::ShaderSource>("diffuse_lopoly.fs");
+
+    if (!vertexShader || !fragmentShader) {
+      LOG(Error) << "Could not load shader. (diffuse_lopoly)";
+    } else {
+      dst->programId = renderer->createProgram(*vertexShader, *fragmentShader);
+      dst->transformUniformId = renderer->createUniform("uTransform");
+    }
   }
 }
 

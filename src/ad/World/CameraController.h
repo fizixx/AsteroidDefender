@@ -1,42 +1,32 @@
-#ifndef AD_CAMERA_INPUT_CONTROLLER_H_
-#define AD_CAMERA_INPUT_CONTROLLER_H_
+#ifndef AD_WORLD_CAMERA_CONTROLLER_H_
+#define AD_WORLD_CAMERA_CONTROLLER_H_
 
-#include "canvas/Math/Vec3.h"
+#include "ad/World/Camera.h"
 #include "canvas/Windows/Event.h"
-#include "nucleus/Macros.h"
-
-class Camera;
 
 class CameraController {
 public:
-  explicit CameraController(Camera* camera, F32 mouseSensitivity = 1.0f);
+  explicit CameraController(Camera* camera) : m_camera{camera} {}
 
-  void onMouseMoved(const ca::MouseEvent& event);
-  void onMousePressed(const ca::MouseEvent& event);
-  void onMouseReleased(const ca::MouseEvent& event);
+  Camera* camera() const {
+    return m_camera;
+  }
 
-  void onKeyPressed(const ca::KeyEvent& event);
-  void onKeyReleased(const ca::KeyEvent& event);
+  virtual void onMouseMoved(const ca::Vec2& position) = 0;
+  virtual void onMousePressed(ca::MouseEvent::Button button, const ca::Vec2& position) = 0;
+  virtual void onMouseReleased(ca::MouseEvent::Button button, const ca::Vec2& position) = 0;
+  virtual void onMouseWheel(const ca::Vec2& offset) = 0;
 
-  void tick(F32 delta);
+  virtual void onKeyPressed(ca::Key key) = 0;
+  virtual void onKeyReleased(ca::Key key) = 0;
+
+  virtual void tick(F32 delta) = 0;
+
+protected:
+  Camera* m_camera;
 
 private:
   DELETE_COPY_AND_MOVE(CameraController);
-
-  // The camera we are controlling.
-  Camera* m_camera;
-
-  // The speed at which the camera on mouse movement.
-  F32 m_mouseSensitivity;
-
-  // Keep track of the current pitch and yaw values that we pass to the camera.
-  F32 m_yaw = 0.0f;
-  F32 m_pitch = 0.0f;
-
-  ca::Vec3 m_moveDirection{0.0f, 0.0f, 0.0f};
-
-  bool m_mouseIsDown = false;
-  ca::Pos m_lastMousePosition{0, 0};
 };
 
-#endif  // AD_CAMERA_INPUT_CONTROLLER_H_
+#endif  // AD_WORLD_CAMERA_CONTROLLER_H_

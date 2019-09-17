@@ -1,7 +1,8 @@
 #include "ad/Geometry/Converters.h"
 #include "ad/Geometry/Geometry.h"
 #include "ad/Geometry/ShaderSourceConverter.h"
-#include "ad/World/CameraController.h"
+#include "ad/World/FirstPersonCameraController.h"
+#include "ad/World/OrbitCameraController.h"
 #include "ad/World/TopDownCameraController.h"
 #include "ad/World/World.h"
 #include "canvas/App.h"
@@ -10,6 +11,7 @@
 #include "canvas/OpenGL.h"
 #include "canvas/Renderer/LineRenderer.h"
 #include "elastic/Context.h"
+#include "elastic/Views/ButtonView.h"
 #include "elastic/Views/LabelView.h"
 #include "hive/PhysicalResourceLocator.h"
 #include "hive/ResourceManager.h"
@@ -96,7 +98,7 @@ public:
 
     m_converters.registerConverters(&m_resourceManager, renderer);
 
-    m_model = m_resourceManager.get<Model>("miner/miner.dae");
+    m_model = m_resourceManager.get<Model>("command_center_lopoly.dae");
     if (!m_model) {
       LOG(Error) << "Could not load model.";
       return false;
@@ -128,8 +130,6 @@ public:
 
     m_world.generate();
 
-    m_debugCamera.setFarPlane(5000.0f);
-
     m_worldCamera.moveTo({0.0f, 0.0f, 5.0f});
     m_worldCamera.setNearPlane(0.1f);
     m_worldCamera.setFarPlane(200.0f);
@@ -142,42 +142,50 @@ public:
 
     m_screenSize = size;
 
-    m_debugCamera.setAspectRatio(Camera::aspectRatioFromScreenSize(m_screenSize));
-    m_worldCamera.setAspectRatio(Camera::aspectRatioFromScreenSize(m_screenSize));
+    auto aspectRatio = Camera::aspectRatioFromScreenSize(m_screenSize);
+
+    m_worldCamera.setAspectRatio(aspectRatio);
+    m_orbitCamera.setAspectRatio(aspectRatio);
 
     m_ui.resize(size);
   }
 
   void onMouseMoved(const ca::MouseEvent& event) override {
-    m_topDownCameraController.onMouseMoved(
-        Camera::convertScreenPositionToClipSpace(event.pos, m_screenSize));
     m_currentMousePosition = event.pos;
+
+    m_currentCamera->onMouseMoved(
+        Camera::convertScreenPositionToClipSpace(event.pos, m_screenSize));
   }
 
   bool onMousePressed(const ca::MouseEvent& event) override {
-    m_topDownCameraController.onMousePressed(
+    m_currentCamera->onMousePressed(
         event.button, Camera::convertScreenPositionToClipSpace(event.pos, m_screenSize));
 
     return false;
   }
 
   void onMouseReleased(const ca::MouseEvent& event) override {
-    m_topDownCameraController.onMouseReleased(
+    m_currentCamera->onMouseReleased(
         event.button, Camera::convertScreenPositionToClipSpace(event.pos, m_screenSize));
   }
 
   void onMouseWheel(const ca::MouseWheelEvent& event) override {
-    m_topDownCameraController.onMouseWheel(
+    m_currentCamera->onMouseWheel(
         {static_cast<F32>(event.wheelOffset.x), static_cast<F32>(event.wheelOffset.y)});
   }
 
   void onKeyPressed(const ca::KeyEvent& event) override {
-    m_topDownCameraController.onKeyPressed(event.key);
+    m_currentCamera->onKeyPressed(event.key);
 
     switch (event.key) {
       case ca::Key::C:
-        m_useDebugCamera = !m_useDebugCamera;
-        m_cameraLabel->setLabel(m_useDebugCamera ? "debug" : "world");
+        if (m_currentCamera == &m_worldCameraController) {
+          m_cameraLabel->setLabel("orbit");
+          m_currentCamera = &m_orbitCameraController;
+        } else {
+          m_cameraLabel->setLabel("world");
+          m_currentCamera = &m_worldCameraController;
+        }
         break;
 
       case ca::Key::LBracket:
@@ -194,7 +202,7 @@ public:
   }
 
   void onKeyReleased(const ca::KeyEvent& event) override {
-    m_topDownCameraController.onKeyReleased(event.key);
+    m_currentCamera->onKeyReleased(event.key);
 
     switch (event.key) {
       case ca::Key::LBracket:
@@ -211,7 +219,7 @@ public:
   }
 
   void tick(F32 delta) override {
-    m_topDownCameraController.tick(delta);
+    m_currentCamera->tick(delta);
 
     {
       m_ray = m_worldCamera.createRayForMouse(
@@ -238,40 +246,21 @@ public:
     ca::Mat4 viewWorld{ca::Mat4::identity};
     m_worldCamera.updateViewMatrix(&viewWorld);
 
-    // Projection
-
-    ca::Mat4 projection = ca::Mat4::identity;
-    m_debugCamera.updateProjectionMatrix(&projection);
-
-    // View (debug)
-
-    m_debugCamera.moveTo({-25.0f, 25.0f, 50.0f});
-    m_debugCamera.rotateTo(
-        ca::Quaternion::fromEulerAngles(ca::degrees(-30.0f), ca::degrees(-30.0f), ca::Angle::zero));
-
-    ca::Mat4 viewDebug{ca::Mat4::identity};
-    m_debugCamera.updateViewMatrix(&viewDebug);
-
     // Final matrix
 
     ca::Mat4 finalMatrix = ca::Mat4::identity;
-    if (m_useDebugCamera) {
-      finalMatrix = projection * viewDebug;
-    } else {
-      ca::Mat4 camProjection = ca::Mat4::identity;
-      ca::Mat4 camView = ca::Mat4::identity;
+    ca::Mat4 camProjection = ca::Mat4::identity;
+    ca::Mat4 camView = ca::Mat4::identity;
 
-      m_worldCamera.updateProjectionMatrix(&camProjection);
-      m_worldCamera.updateViewMatrix(&camView);
+    Camera* current = m_currentCamera->camera();
 
-      finalMatrix = camProjection * camView;
-    }
+    current->updateProjectionMatrix(&camProjection);
+    current->updateViewMatrix(&camView);
+
+    finalMatrix = camProjection * camView;
+#endif  // 0
 
     // Render
-
-    if (m_useDebugCamera) {
-      drawCamera(&m_worldCamera);
-    }
 
     ca::Plane worldPlane{-ca::Vec3::forward, 0.0f};
 
@@ -281,30 +270,14 @@ public:
 
       auto intersection = ca::intersection(worldPlane, mouseRay);
 
-      // ca::Quaternion::fromEulerAngles(ca::degrees(45.0f), ca::degrees(45.0f), ca::degrees(45.0f))
-
       drawModel(renderer, intersection.position, ca::Quaternion::identity, finalMatrix);
-
-#if 0
-      ca::Vec3 p1 = mouseRay.origin;
-      ca::Vec3 p2 = mouseRay.origin +
-                    mouseRay.direction * (m_worldCamera.farPlane() + m_worldCamera.nearPlane());
-
-      m_lineRenderer.renderLine(p1, p2, ca::Color::red);
-      m_lineRenderer.renderLine(ca::Vec3::zero, p1, ca::Color::green);
-      m_lineRenderer.renderLine(ca::Vec3::zero, p2, ca::Color::blue);
-#endif
     }
 
-#if 0
-    m_lineRenderer.renderGrid(worldPlane, ca::Vec3::up, ca::Color{1.0f, 1.0f, 1.0f, 0.1f}, 20,
-                              1.0f);
+    Camera* camera = m_currentCamera->camera();
 
-    m_lineRenderer.render(finalMatrix);
-#endif
+    m_world.render(renderer, camera);
 
     glDisable(GL_DEPTH_TEST);
-#endif  // 0
 
     m_ui.render(renderer);
   }
@@ -322,9 +295,6 @@ public:
     // renderModel(renderer, m_cube.model, final, m_cube.programId, m_cube.transformUniformId);
 
     renderModel(renderer, *m_model, final);
-
-    Camera* camera = m_useDebugCamera ? &m_debugCamera : &m_worldCamera;
-    m_world.render(renderer, camera);
   }
 
   void drawCamera(Camera* camera) {
@@ -378,11 +348,24 @@ public:
 private:
   DELETE_COPY_AND_MOVE(AsteroidDefender);
 
+  struct BuildMinerClickListener : public el::ButtonView::OnClickListener {
+    ~BuildMinerClickListener() override = default;
+
+    void onButtonClicked(el::ButtonView *sender) override {
+      LOG(Info) << "Build miner!";
+    }
+  };
+
   bool createUI(el::Context* context, el::Font* font) {
+    el::ContextView* rootView = context->getRootView();
+
     m_cameraLabel = new el::LabelView{context, "world camera", font};
-    context->getRootView()->addChild(m_cameraLabel);
+    rootView->addChild(m_cameraLabel);
     m_cameraLabel->setVerticalAlignment(el::Alignment::Top);
     m_cameraLabel->setHorizontalAlignment(el::Alignment::Left);
+
+    m_buildMinerButton = new el::ButtonView{context, "Miner", new BuildMinerClickListener};
+    rootView->addChild(m_buildMinerButton);
 
     return true;
   }
@@ -398,6 +381,7 @@ private:
   el::Context m_ui;
 
   el::LabelView* m_cameraLabel = nullptr;
+  el::ButtonView* m_buildMinerButton = nullptr;
 
   World m_world;
 
@@ -406,11 +390,12 @@ private:
   Converters m_converters;
 
   Camera m_worldCamera{ca::degrees(45.0f), {0.0f, 0.0f, 1.0f}};
-  TopDownCameraController m_topDownCameraController{
-      &m_worldCamera, {ca::Vec3::forward, 0.0f}, 25.0f};
+  TopDownCameraController m_worldCameraController{&m_worldCamera, {ca::Vec3::forward, 0.0f}, 25.0f};
 
-  bool m_useDebugCamera = false;
-  Camera m_debugCamera;
+  Camera m_orbitCamera{ca::degrees(45.0f), {0.0f, 0.0f, 1.0f}};
+  OrbitCameraController m_orbitCameraController{&m_orbitCamera, ca::Vec3::zero};
+
+  CameraController* m_currentCamera = &m_worldCameraController;
 
   ca::Ray m_ray;
 
