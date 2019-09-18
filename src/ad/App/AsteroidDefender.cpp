@@ -351,7 +351,7 @@ private:
   struct BuildMinerClickListener : public el::ButtonView::OnClickListener {
     ~BuildMinerClickListener() override = default;
 
-    void onButtonClicked(el::ButtonView *sender) override {
+    void onButtonClicked(el::ButtonView*) override {
       LOG(Info) << "Build miner!";
     }
   };

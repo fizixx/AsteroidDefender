@@ -30,13 +30,13 @@ void FirstPersonCameraController::onMousePressed(ca::MouseEvent::Button button,
 }
 
 void FirstPersonCameraController::onMouseReleased(ca::MouseEvent::Button button,
-                                                  const ca::Vec2& position) {
+                                                  const ca::Vec2& UNUSED(position)) {
   if (button == ca::MouseEvent::Left) {
     m_mouseIsDown = false;
   }
 }
 
-void FirstPersonCameraController::onMouseWheel(const ca::Vec2& offset) {}
+void FirstPersonCameraController::onMouseWheel(const ca::Vec2& UNUSED(offset)) {}
 
 void FirstPersonCameraController::onKeyPressed(ca::Key key) {
   switch (key) {
