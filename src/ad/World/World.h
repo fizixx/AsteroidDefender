@@ -13,6 +13,10 @@ namespace hi {
 class ResourceManager;
 }
 
+namespace re {
+struct Model;
+}
+
 class Camera;
 
 class World {
@@ -39,10 +43,10 @@ private:
   EntityId createEnemy(const ca::Vec2& position);
 
   struct {
-    Model* commandCenter = nullptr;
-    Model* miner = nullptr;
-    Model* asteroid = nullptr;
-    Model* enemy = nullptr;
+    re::Model* commandCenter = nullptr;
+    re::Model* miner = nullptr;
+    re::Model* asteroid = nullptr;
+    re::Model* enemy = nullptr;
   } m_models;
 
   ca::Vec2 m_cursorPosition{ca::Vec2::zero};

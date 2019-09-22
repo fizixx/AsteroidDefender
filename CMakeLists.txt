@@ -4,7 +4,6 @@ project("AsteroidDefender")
 # Dependencies
 
 add_subdirectory(../elastic elastic)
-add_subdirectory(../hive hive)
 
 # AsteroidDefender
 
@@ -13,13 +12,6 @@ set(AsteroidDefender_SOURCE_FILES
 
     src/ad/Geometry/Geometry.h
     src/ad/Geometry/Geometry.cpp
-    src/ad/Geometry/TextureConverter.h
-    src/ad/Geometry/TextureConverter.cpp
-    src/ad/Geometry/ModelConverter.h
-    src/ad/Geometry/ModelConverter.cpp
-    src/ad/Geometry/ShaderSourceConverter.h
-    src/ad/Geometry/ShaderSourceConverter.cpp
-    src/ad/Geometry/RendererConverter.h
     src/ad/Geometry/Converters.h
 
     src/ad/World/Camera.cpp
@@ -38,7 +30,7 @@ set(AsteroidDefender_SOURCE_FILES
 
 add_executable(AsteroidDefender WIN32 MACOSX_BUNDLE ${AsteroidDefender_SOURCE_FILES})
 target_include_directories(AsteroidDefender PUBLIC src)
-target_link_libraries(AsteroidDefender elastic hive)
+target_link_libraries(AsteroidDefender reactor elastic)
 set_target_properties(AsteroidDefender PROPERTIES
     CXX_STANDARD 14
     CXX_STANDARD_REQUIRED ON

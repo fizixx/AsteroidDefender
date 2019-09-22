@@ -1,6 +1,6 @@
 #include "ad/Geometry/Converters.h"
 #include "ad/Geometry/Geometry.h"
-#include "ad/Geometry/ShaderSourceConverter.h"
+#include "../../../../reactor/include/reactor/Resources/Converters/ShaderSourceConverter.h"
 #include "ad/World/FirstPersonCameraController.h"
 #include "ad/World/OrbitCameraController.h"
 #include "ad/World/TopDownCameraController.h"
@@ -98,7 +98,7 @@ public:
 
     m_converters.registerConverters(&m_resourceManager, renderer);
 
-    m_model = m_resourceManager.get<Model>("command_center_lopoly.dae");
+    m_model = m_resourceManager.get<re::Model>("command_center_lopoly.dae");
     if (!m_model) {
       LOG(Error) << "Could not load model.";
       return false;
@@ -373,7 +373,7 @@ private:
   hi::ResourceManager m_resourceManager;
   hi::PhysicalFileResourceLocator m_physicalFileResourceLocator;
 
-  Model* m_model = nullptr;
+  re::Model* m_model = nullptr;
 
   // ca::LineRenderer m_lineRenderer;
 

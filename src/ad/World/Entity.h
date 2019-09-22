@@ -3,8 +3,7 @@
 
 #include "canvas/Math/Common.h"
 #include "canvas/Math/Vec2.h"
-
-struct Model;
+#include "reactor/Resources/Model.h"
 
 const MemSize kInvalidEntityId = std::numeric_limits<MemSize>::max();
 
@@ -18,7 +17,7 @@ struct EntityId {
 
 struct Entity {
   ca::Vec2 position = ca::Vec2::zero;
-  Model* model = nullptr;
+  re::Model* model = nullptr;
 
   struct {
     ca::Angle direction = ca::degrees(0.0f);

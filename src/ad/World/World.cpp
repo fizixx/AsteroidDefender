@@ -43,7 +43,6 @@ void World::setCursorPosition(const ca::Vec2& position) {
 
 void World::tick(F32 delta) {
   for (auto& entity : m_entities) {
-
     if (entity.movement.speed > 0.0f) {
       ca::Vec2 d{ca::cosine(entity.movement.direction), ca::sine(entity.movement.direction)};
       F32 distance = entity.movement.speed * 0.01f * delta;
@@ -60,25 +59,25 @@ void World::tick(F32 delta) {
 }
 
 bool World::loadModels(hi::ResourceManager* resourceManager) {
-  m_models.commandCenter = resourceManager->get<Model>("command_center.dae");
+  m_models.commandCenter = resourceManager->get<re::Model>("command_center.dae");
   if (!m_models.commandCenter) {
     LOG(Error) << "Could not load command center model.";
     return false;
   }
 
-  m_models.miner = resourceManager->get<Model>("miner/miner.dae");
+  m_models.miner = resourceManager->get<re::Model>("miner/miner.dae");
   if (!m_models.miner) {
     LOG(Error) << "Could not load miner model.";
     return false;
   }
 
-  m_models.asteroid = resourceManager->get<Model>("asteroid.dae");
+  m_models.asteroid = resourceManager->get<re::Model>("asteroid.dae");
   if (!m_models.asteroid) {
     LOG(Error) << "Could not load asteroid model.";
     return false;
   }
 
-  m_models.enemy = resourceManager->get<Model>("enemy.dae");
+  m_models.enemy = resourceManager->get<re::Model>("enemy.dae");
   if (!m_models.enemy) {
     LOG(Error) << "Could not load enemy model.";
     return false;
@@ -144,7 +143,7 @@ void World::render(ca::Renderer* renderer, Camera* camera) {
   auto m = projection * view;
 
   for (auto& entity : m_entities) {
-    auto translation = ca::translationMatrix(ca::Vec3{ entity.position, 0.0f });
+    auto translation = ca::translationMatrix(ca::Vec3{entity.position, 0.0f});
     auto rotation = ca::rotationMatrix(ca::Vec3{0.0f, 0.0f, 1.0f}, entity.movement.direction);
 
     auto final = m * ca::createModelMatrix(translation, rotation, ca::Mat4::identity);
