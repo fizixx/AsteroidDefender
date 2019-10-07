@@ -2,6 +2,7 @@
 #define WORLD_H_
 
 #include "ad/World/Entity.h"
+#include "legion/World/Camera.h"
 #include "nucleus/Containers/DynamicArray.h"
 #include "nucleus/Macros.h"
 
@@ -17,8 +18,6 @@ namespace re {
 struct Model;
 }
 
-class Camera;
-
 class World {
 public:
   World() = default;
@@ -30,24 +29,33 @@ public:
   void setCursorPosition(const ca::Vec2& position);
 
   void tick(F32 delta);
-  void render(ca::Renderer* renderer, Camera* camera);
+  void render(ca::Renderer* renderer, le::Camera* camera);
+
+  void startBuilding(BuildingType buildingType);
+  void build();
 
 private:
   DELETE_COPY_AND_MOVE(World);
 
   bool loadModels(hi::ResourceManager* resourceManager);
 
-  EntityId createCommandCenter();
+  EntityId createCommandCenter(const ca::Vec2& position);
   EntityId createMiner(const ca::Vec2& position);
   EntityId createAsteroid(const ca::Vec2& position);
   EntityId createEnemy(const ca::Vec2& position);
 
   struct {
-    re::Model* commandCenter = nullptr;
-    re::Model* miner = nullptr;
-    re::Model* asteroid = nullptr;
-    re::Model* enemy = nullptr;
+    le::Model* commandCenter = nullptr;
+    le::Model* miner = nullptr;
+    le::Model* asteroid = nullptr;
+    le::Model* enemy = nullptr;
   } m_models;
+
+  struct {
+    bool isBuilding = false;
+    BuildingType buildingType = BuildingType::Unknown;
+    le::Model* model = nullptr;
+  } m_building;
 
   ca::Vec2 m_cursorPosition{ca::Vec2::zero};
 

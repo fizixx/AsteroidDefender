@@ -1,39 +1,11 @@
 cmake_minimum_required(VERSION 3.10)
-project("AsteroidDefender")
 
-# Dependencies
+project("AsteroidDefender")
 
 add_subdirectory(../elastic elastic)
 
-# AsteroidDefender
+file(GLOB_RECURSE AsteroidDefender_FILES src/*.h src/*.cpp)
 
-set(AsteroidDefender_SOURCE_FILES
-    src/ad/App/AsteroidDefender.cpp
-
-    src/ad/Geometry/Geometry.h
-    src/ad/Geometry/Geometry.cpp
-    src/ad/Geometry/Converters.h
-
-    src/ad/World/Camera.cpp
-    src/ad/World/Camera.h
-    src/ad/World/CameraController.h
-    src/ad/World/TopDownCameraController.h
-    src/ad/World/TopDownCameraController.cpp
-    src/ad/World/OrbitCameraController.h
-    src/ad/World/OrbitCameraController.cpp
-    src/ad/World/FirstPersonCameraController.h
-    src/ad/World/FirstPersonCameraController.cpp
-    src/ad/World/Entity.h
-    src/ad/World/World.cpp
-    src/ad/World/World.h
-    )
-
-add_executable(AsteroidDefender WIN32 MACOSX_BUNDLE ${AsteroidDefender_SOURCE_FILES})
+nucleus_add_executable(AsteroidDefender WIN32 ${AsteroidDefender_FILES})
 target_include_directories(AsteroidDefender PUBLIC src)
-target_link_libraries(AsteroidDefender reactor elastic)
-set_target_properties(AsteroidDefender PROPERTIES
-    CXX_STANDARD 14
-    CXX_STANDARD_REQUIRED ON
-    CXX_EXTENSIONS OFF
-    FOLDER AsteroidDefender
-    )
+target_link_libraries(AsteroidDefender legion elastic)

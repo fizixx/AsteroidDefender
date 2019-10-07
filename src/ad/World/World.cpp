@@ -1,10 +1,10 @@
 #include "World.h"
 
-#include "ad/Geometry/Geometry.h"
-#include "ad/World/Camera.h"
 #include "canvas/Math/Common.h"
 #include "canvas/Math/Transform.h"
 #include "hive/ResourceManager.h"
+#include "legion/Rendering/Rendering.h"
+#include "legion/World/Camera.h"
 
 bool World::initialize(hi::ResourceManager* resourceManager) {
   if (!loadModels(resourceManager)) {
@@ -18,7 +18,7 @@ bool World::initialize(hi::ResourceManager* resourceManager) {
 void World::generate() {
   m_entities.clear();
 
-  createCommandCenter();
+  createCommandCenter(ca::Vec2::zero);
 
   createMiner(ca::Vec2{10.0f, 10.0f});
   createMiner(ca::Vec2{5.0f, 10.0f});
@@ -59,25 +59,25 @@ void World::tick(F32 delta) {
 }
 
 bool World::loadModels(hi::ResourceManager* resourceManager) {
-  m_models.commandCenter = resourceManager->get<re::Model>("command_center.dae");
+  m_models.commandCenter = resourceManager->get<le::Model>("command_center.dae");
   if (!m_models.commandCenter) {
     LOG(Error) << "Could not load command center model.";
     return false;
   }
 
-  m_models.miner = resourceManager->get<re::Model>("miner/miner.dae");
+  m_models.miner = resourceManager->get<le::Model>("miner/miner.dae");
   if (!m_models.miner) {
     LOG(Error) << "Could not load miner model.";
     return false;
   }
 
-  m_models.asteroid = resourceManager->get<re::Model>("asteroid.dae");
+  m_models.asteroid = resourceManager->get<le::Model>("asteroid.dae");
   if (!m_models.asteroid) {
     LOG(Error) << "Could not load asteroid model.";
     return false;
   }
 
-  m_models.enemy = resourceManager->get<re::Model>("enemy.dae");
+  m_models.enemy = resourceManager->get<le::Model>("enemy.dae");
   if (!m_models.enemy) {
     LOG(Error) << "Could not load enemy model.";
     return false;
@@ -86,13 +86,14 @@ bool World::loadModels(hi::ResourceManager* resourceManager) {
   return true;
 }
 
-EntityId World::createCommandCenter() {
+EntityId World::createCommandCenter(const ca::Vec2& position) {
   auto result = m_entities.emplaceBack();
 
   Entity& entity = result.element();
 
-  entity.position = ca::Vec2::zero;
-  entity.model = m_models.commandCenter;
+  entity.position = position;
+
+  entity.render.model = m_models.commandCenter;
 
   return EntityId{result.index()};
 }
@@ -103,7 +104,8 @@ EntityId World::createMiner(const ca::Vec2& position) {
   Entity& entity = result.element();
 
   entity.position = position;
-  entity.model = m_models.miner;
+
+  entity.render.model = m_models.miner;
 
   return EntityId{result.index()};
 }
@@ -114,7 +116,8 @@ EntityId World::createAsteroid(const ca::Vec2& position) {
   Entity& entity = result.element();
 
   entity.position = position;
-  entity.model = m_models.asteroid;
+
+  entity.render.model = m_models.asteroid;
 
   return EntityId{result.index()};
 }
@@ -125,7 +128,8 @@ EntityId World::createEnemy(const ca::Vec2& position) {
   Entity& entity = result.element();
 
   entity.position = position;
-  entity.model = m_models.enemy;
+
+  entity.render.model = m_models.enemy;
 
   entity.movement.direction = ca::degrees((F32)(std::rand() % 360));
   entity.movement.speed = 1.0f + (F32)(std::rand() % 2);
@@ -133,20 +137,73 @@ EntityId World::createEnemy(const ca::Vec2& position) {
   return EntityId{result.index()};
 }
 
-void World::render(ca::Renderer* renderer, Camera* camera) {
+void World::render(ca::Renderer* renderer, le::Camera* camera) {
   ca::Mat4 projection = ca::Mat4::identity;
   camera->updateProjectionMatrix(&projection);
 
   ca::Mat4 view = ca::Mat4::identity;
   camera->updateViewMatrix(&view);
 
-  auto m = projection * view;
+  auto projectionAndView = projection * view;
+
+  // Render the entities.
 
   for (auto& entity : m_entities) {
     auto translation = ca::translationMatrix(ca::Vec3{entity.position, 0.0f});
     auto rotation = ca::rotationMatrix(ca::Vec3{0.0f, 0.0f, 1.0f}, entity.movement.direction);
 
-    auto final = m * ca::createModelMatrix(translation, rotation, ca::Mat4::identity);
-    renderModel(renderer, *entity.model, final);
+    auto final =
+        projectionAndView * ca::createModelMatrix(translation, rotation, ca::Mat4::identity);
+    le::renderModel(renderer, *entity.render.model, final);
   }
+
+  if (m_building.isBuilding) {
+    auto translation = ca::translationMatrix(ca::Vec3{m_cursorPosition, 0.0f});
+
+    auto final = projectionAndView *
+                 ca::createModelMatrix(translation, ca::Mat4::identity, ca::Mat4::identity);
+    le::renderModel(renderer, *m_building.model, final);
+  }
+}
+
+void World::startBuilding(BuildingType buildingType) {
+  m_building.isBuilding = true;
+  m_building.buildingType = buildingType;
+
+  switch (buildingType) {
+    case BuildingType::CommandCenter:
+      m_building.model = m_models.commandCenter;
+      break;
+
+    case BuildingType::Miner:
+      m_building.model = m_models.miner;
+      break;
+
+    default:
+      m_building.isBuilding = false;
+      break;
+  }
+}
+
+void World::build() {
+  if (!m_building.isBuilding) {
+    return;
+  }
+
+  switch (m_building.buildingType) {
+    case BuildingType::CommandCenter:
+      createCommandCenter(m_cursorPosition);
+      break;
+
+    case BuildingType::Miner:
+      createMiner(m_cursorPosition);
+      break;
+
+    default:
+      break;
+  }
+
+  m_building.isBuilding = false;
+  m_building.buildingType = BuildingType::Unknown;
+  m_building.model = nullptr;
 }

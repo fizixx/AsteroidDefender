@@ -3,7 +3,7 @@
 
 #include "canvas/Math/Common.h"
 #include "canvas/Math/Vec2.h"
-#include "reactor/Resources/Model.h"
+#include "legion/Resources/Model.h"
 
 const MemSize kInvalidEntityId = std::numeric_limits<MemSize>::max();
 
@@ -15,9 +15,14 @@ struct EntityId {
   }
 };
 
+enum class BuildingType : U32 {
+  Unknown = 0x00,
+  CommandCenter = 0x01,
+  Miner = 0x02,
+};
+
 struct Entity {
   ca::Vec2 position = ca::Vec2::zero;
-  re::Model* model = nullptr;
 
   struct {
     ca::Angle direction = ca::degrees(0.0f);
@@ -25,6 +30,14 @@ struct Entity {
 
     F32 distanceTravelled = 0.0f;
   } movement;
+
+  struct {
+    BuildingType type = BuildingType::Unknown;
+  } building;
+
+  struct {
+    le::Model* model = nullptr;
+  } render;
 };
 
 #endif  // AD_WORLD_ENTITY_H_

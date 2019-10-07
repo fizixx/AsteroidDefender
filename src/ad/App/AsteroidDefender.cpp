@@ -1,64 +1,25 @@
-#include "ad/Geometry/Converters.h"
-#include "ad/Geometry/Geometry.h"
-#include "../../../../reactor/include/reactor/Resources/Converters/ShaderSourceConverter.h"
-#include "ad/World/FirstPersonCameraController.h"
-#include "ad/World/OrbitCameraController.h"
-#include "ad/World/TopDownCameraController.h"
 #include "ad/World/World.h"
 #include "canvas/App.h"
 #include "canvas/Math/Intersection.h"
 #include "canvas/Math/Transform.h"
 #include "canvas/OpenGL.h"
-#include "canvas/Renderer/LineRenderer.h"
 #include "elastic/Context.h"
 #include "elastic/Views/ButtonView.h"
 #include "elastic/Views/LabelView.h"
+#include "elastic/Views/LinearSizerView.h"
 #include "hive/PhysicalResourceLocator.h"
-#include "hive/ResourceManager.h"
+#include "legion/Controllers/FirstPersonCameraController.h"
+#include "legion/Controllers/OrbitCameraController.h"
+#include "legion/Controllers/TopDownCameraController.h"
+#include "legion/Rendering/Rendering.h"
+#include "legion/Resources/ResourceManager.h"
 #include "nucleus/Streams/FileInputStream.h"
-#include "nucleus/Streams/WrappedMemoryInputStream.h"
-
-void drawCross(ca::LineRenderer* lineRenderer, const ca::Vec3& position, const ca::Color& color,
-               F32 scale = 1.0f) {
-  lineRenderer->renderLine(position - ca::Vec3{1.0f, 0.0f, 0.0f} * scale,
-                           position + ca::Vec3{1.0f, 0.0f, 0.0f} * scale, color);
-  lineRenderer->renderLine(position - ca::Vec3{0.0f, 1.0f, 0.0f} * scale,
-                           position + ca::Vec3{0.0f, 1.0f, 0.0f} * scale, color);
-  lineRenderer->renderLine(position - ca::Vec3{0.0f, 0.0f, 1.0f} * scale,
-                           position + ca::Vec3{0.0f, 0.0f, 1.0f} * scale, color);
-}
-
-const I8* kCubeVertexShaderSource = R"(
-#version 330
-
-layout(location = 0) in vec3 inPosition;
-layout(location = 1) in vec4 inColor;
-
-uniform mat4 uTransform;
-
-out vec4 vColor;
-
-void main() {
-  gl_Position = uTransform * vec4(inPosition, 1.0);
-  vColor = inColor;
-}
-)";
-
-const I8* kCubeFragmentShaderSource = R"(
-#version 330
-
-in vec4 vColor;
-out vec4 final;
-
-void main() {
-  final = vec4(vColor.xyz, 1.0);
-}
-)";
 
 class AsteroidDefender : public ca::WindowDelegate {
 public:
   AsteroidDefender()
     : ca::WindowDelegate{"Asteroid Defender"}, m_ray{{0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}} {}
+
   ~AsteroidDefender() override = default;
 
   bool onWindowCreated(ca::Window* window) override {
@@ -68,41 +29,11 @@ public:
 
     ca::Renderer* renderer = window->getRenderer();
 
-#if 0
-    m_lineRenderer.initialize(renderer);
-#endif
-
-#if 0
-    if (!createCube(&m_cube.model, renderer)) {
-      LOG(Error) << "Could not create cube.";
-      return false;
-    }
-#endif
-
-    nu::WrappedMemoryInputStream vertexStream{kCubeVertexShaderSource,
-                                              nu::StringView{kCubeVertexShaderSource}.getLength()};
-    auto vss = ca::ShaderSource::from(&vertexStream);
-
-    nu::WrappedMemoryInputStream fragmentStream{
-        kCubeFragmentShaderSource, nu::StringView{kCubeFragmentShaderSource}.getLength()};
-    auto fss = ca::ShaderSource::from(&fragmentStream);
-
-    //    m_cube.programId = renderer->createProgram(vss, fss);
-
-    //    m_cube.transformUniformId = renderer->createUniform("uTransform");
-
     auto assetsPath = nu::getCurrentWorkingDirectory() / "assets";
     LOG(Info) << "Assets path: " << assetsPath.getPath();
     m_physicalFileResourceLocator.setRootPath(assetsPath);
     m_resourceManager.addResourceLocatorBack(&m_physicalFileResourceLocator);
-
-    m_converters.registerConverters(&m_resourceManager, renderer);
-
-    m_model = m_resourceManager.get<re::Model>("command_center_lopoly.dae");
-    if (!m_model) {
-      LOG(Error) << "Could not load model.";
-      return false;
-    }
+    m_resourceManager.setRenderer(renderer);
 
     if (!m_ui.initialize(renderer)) {
       return false;
@@ -117,7 +48,7 @@ public:
 #else
     nu::FileInputStream fontStream{nu::FilePath{R"(C:\Windows\Fonts\Arial.ttf)"}};
 #endif
-    m_font.load(&fontStream, renderer, 20);
+    m_font.load(&fontStream, renderer, 30);
 
     if (!createUI(&m_ui, &m_font)) {
       return false;
@@ -142,7 +73,7 @@ public:
 
     m_screenSize = size;
 
-    auto aspectRatio = Camera::aspectRatioFromScreenSize(m_screenSize);
+    auto aspectRatio = le::Camera::aspectRatioFromScreenSize(m_screenSize);
 
     m_worldCamera.setAspectRatio(aspectRatio);
     m_orbitCamera.setAspectRatio(aspectRatio);
@@ -151,25 +82,40 @@ public:
   }
 
   void onMouseMoved(const ca::MouseEvent& event) override {
+    m_ui.onMouseMoved(event);
+
     m_currentMousePosition = event.pos;
 
     m_currentCamera->onMouseMoved(
-        Camera::convertScreenPositionToClipSpace(event.pos, m_screenSize));
+        le::Camera::convertScreenPositionToClipSpace(event.pos, m_screenSize));
   }
 
   bool onMousePressed(const ca::MouseEvent& event) override {
+    if (m_ui.onMousePressed(event)) {
+      return true;
+    }
+
+    if (event.button == ca::MouseEvent::Button::Left) {
+      m_world.build();
+      return true;
+    }
+
     m_currentCamera->onMousePressed(
-        event.button, Camera::convertScreenPositionToClipSpace(event.pos, m_screenSize));
+        event.button, le::Camera::convertScreenPositionToClipSpace(event.pos, m_screenSize));
 
     return false;
   }
 
   void onMouseReleased(const ca::MouseEvent& event) override {
+    m_ui.onMouseReleased(event);
+
     m_currentCamera->onMouseReleased(
-        event.button, Camera::convertScreenPositionToClipSpace(event.pos, m_screenSize));
+        event.button, le::Camera::convertScreenPositionToClipSpace(event.pos, m_screenSize));
   }
 
   void onMouseWheel(const ca::MouseWheelEvent& event) override {
+    m_ui.onMouseWheel(event);
+
     m_currentCamera->onMouseWheel(
         {static_cast<F32>(event.wheelOffset.x), static_cast<F32>(event.wheelOffset.y)});
   }
@@ -223,7 +169,7 @@ public:
 
     {
       m_ray = m_worldCamera.createRayForMouse(
-          Camera::convertScreenPositionToClipSpace(m_currentMousePosition, m_screenSize));
+          le::Camera::convertScreenPositionToClipSpace(m_currentMousePosition, m_screenSize));
 
       ca::Plane worldPlane{-ca::Vec3::forward, 0.0f};
       auto result = ca::intersection(worldPlane, m_ray);
@@ -234,46 +180,9 @@ public:
   }
 
   void onRender(ca::Renderer* renderer) override {
-#if 0
-    m_lineRenderer.beginFrame();
-#endif
-
-#if 1
     glEnable(GL_DEPTH_TEST);
 
-    // View (world)
-
-    ca::Mat4 viewWorld{ca::Mat4::identity};
-    m_worldCamera.updateViewMatrix(&viewWorld);
-
-    // Final matrix
-
-    ca::Mat4 finalMatrix = ca::Mat4::identity;
-    ca::Mat4 camProjection = ca::Mat4::identity;
-    ca::Mat4 camView = ca::Mat4::identity;
-
-    Camera* current = m_currentCamera->camera();
-
-    current->updateProjectionMatrix(&camProjection);
-    current->updateViewMatrix(&camView);
-
-    finalMatrix = camProjection * camView;
-#endif  // 0
-
-    // Render
-
-    ca::Plane worldPlane{-ca::Vec3::forward, 0.0f};
-
-    {
-      ca::Ray mouseRay = m_worldCamera.createRayForMouse(
-          Camera::convertScreenPositionToClipSpace(m_currentMousePosition, m_screenSize));
-
-      auto intersection = ca::intersection(worldPlane, mouseRay);
-
-      drawModel(renderer, intersection.position, ca::Quaternion::identity, finalMatrix);
-    }
-
-    Camera* camera = m_currentCamera->camera();
+    le::Camera* camera = m_currentCamera->camera();
 
     m_world.render(renderer, camera);
 
@@ -282,6 +191,7 @@ public:
     m_ui.render(renderer);
   }
 
+#if 0
   void drawModel(ca::Renderer* renderer, const ca::Vec3& position,
                  const ca::Quaternion& orientation, const ca::Mat4& finalMatrix) {
     ca::Mat4 modelTranslation = translationMatrix(position);
@@ -294,20 +204,13 @@ public:
 
     // renderModel(renderer, m_cube.model, final, m_cube.programId, m_cube.transformUniformId);
 
-    renderModel(renderer, *m_model, final);
+    le::renderModel(renderer, *m_model, final);
   }
-
-  void drawCamera(Camera* camera) {
-    // drawModel(renderer, camera->position(), camera->orientation(), finalMatrix);
+#endif  // 0
 
 #if 0
-    m_lineRenderer.renderLine(camera->position(), camera->position() + camera->forward(),
-                              ca::Color::red);
-    m_lineRenderer.renderLine(camera->position(), camera->position() + camera->right(),
-                              ca::Color::green);
-    m_lineRenderer.renderLine(camera->position(), camera->position() + camera->up(),
-                              ca::Color::blue);
-#endif  // 0
+  void drawCamera(le::Camera* camera) {
+    // drawModel(renderer, camera->position(), camera->orientation(), finalMatrix);
 
     // Draw the frustum.
     ca::Mat4 camProjection = ca::Mat4::identity;
@@ -335,67 +238,79 @@ public:
       p /= p.w;
       pos.emplaceBack(p);
     }
-
-#if 0
-    for (MemSize i = 0; i < 4; ++i) {
-      m_lineRenderer.renderLine(pos[0 + i].xyz(), pos[0 + ((i + 1) % 4)].xyz(), ca::Color::white);
-      m_lineRenderer.renderLine(pos[4 + i].xyz(), pos[4 + ((i + 1) % 4)].xyz(), ca::Color::white);
-      m_lineRenderer.renderLine(pos[i].xyz(), pos[4 + i].xyz(), ca::Color::white);
-    }
-#endif
   }
+#endif  // 0
 
 private:
   DELETE_COPY_AND_MOVE(AsteroidDefender);
-
-  struct BuildMinerClickListener : public el::ButtonView::OnClickListener {
-    ~BuildMinerClickListener() override = default;
-
-    void onButtonClicked(el::ButtonView*) override {
-      LOG(Info) << "Build miner!";
-    }
-  };
 
   bool createUI(el::Context* context, el::Font* font) {
     el::ContextView* rootView = context->getRootView();
 
     m_cameraLabel = new el::LabelView{context, "world camera", font};
-    rootView->addChild(m_cameraLabel);
     m_cameraLabel->setVerticalAlignment(el::Alignment::Top);
-    m_cameraLabel->setHorizontalAlignment(el::Alignment::Left);
+    m_cameraLabel->setHorizontalAlignment(el::Alignment::Right);
+    rootView->addChild(m_cameraLabel);
 
-    m_buildMinerButton = new el::ButtonView{context, "Miner", new BuildMinerClickListener};
-    rootView->addChild(m_buildMinerButton);
+    auto buttonContainer = new el::LinearSizerView{&m_ui};
+    buttonContainer->setOrientation(el::Orientation::Vertical);
+    buttonContainer->setHorizontalAlignment(el::Alignment::Left);
+    buttonContainer->setVerticalAlignment(el::Alignment::Top);
+    buttonContainer->setMinSize(ca::Size{250, 0});
+    m_ui.getRootView()->addChild(buttonContainer);
+
+    addBuildButton(buttonContainer, BuildingType::CommandCenter, "Command Center");
+    addBuildButton(buttonContainer, BuildingType::Miner, "Miner");
 
     return true;
   }
 
-  hi::ResourceManager m_resourceManager;
+  struct BuildClickListener : public el::ButtonView::OnClickListener {
+    World* world;
+    BuildingType buildingType;
+
+    BuildClickListener(World* world, BuildingType buildingType)
+      : world{world}, buildingType{buildingType} {}
+
+    ~BuildClickListener() override = default;
+
+    void onButtonClicked(el::ButtonView* sender) override {
+      world->startBuilding(buildingType);
+    }
+  };
+
+  auto addBuildButton(el::GroupView* container, BuildingType buildingType,
+                      const nu::StringView& label) -> void {
+    auto clickListener = new BuildClickListener{&m_world, buildingType};
+    auto button = new el::ButtonView{&m_ui, label, clickListener};
+    button->setFont(&m_font);
+    button->setMinSize(ca::Size{0, 45});
+    button->setExpansion(el::Expansion::Horizontal);
+    container->addChild(button);
+  }
+
+  le::ResourceManager m_resourceManager;
   hi::PhysicalFileResourceLocator m_physicalFileResourceLocator;
 
-  re::Model* m_model = nullptr;
-
-  // ca::LineRenderer m_lineRenderer;
+  le::Model* m_model = nullptr;
 
   el::Font m_font;
   el::Context m_ui;
 
   el::LabelView* m_cameraLabel = nullptr;
-  el::ButtonView* m_buildMinerButton = nullptr;
 
   World m_world;
 
   F32 m_fieldOfViewMovement = 0.0f;
 
-  Converters m_converters;
+  le::Camera m_worldCamera{ca::degrees(45.0f), {0.0f, 0.0f, 1.0f}};
+  le::TopDownCameraController m_worldCameraController{
+      &m_worldCamera, {ca::Vec3::forward, 0.0f}, 25.0f};
 
-  Camera m_worldCamera{ca::degrees(45.0f), {0.0f, 0.0f, 1.0f}};
-  TopDownCameraController m_worldCameraController{&m_worldCamera, {ca::Vec3::forward, 0.0f}, 25.0f};
+  le::Camera m_orbitCamera{ca::degrees(45.0f), {0.0f, 0.0f, 1.0f}};
+  le::OrbitCameraController m_orbitCameraController{&m_orbitCamera, ca::Vec3::zero};
 
-  Camera m_orbitCamera{ca::degrees(45.0f), {0.0f, 0.0f, 1.0f}};
-  OrbitCameraController m_orbitCameraController{&m_orbitCamera, ca::Vec3::zero};
-
-  CameraController* m_currentCamera = &m_worldCameraController;
+  le::CameraController* m_currentCamera = &m_worldCameraController;
 
   ca::Ray m_ray;
 
