@@ -1,5 +1,6 @@
 #include "World.h"
 
+#include "Entity.h"
 #include "canvas/Math/Common.h"
 #include "canvas/Math/Transform.h"
 #include "hive/ResourceManager.h"
@@ -42,20 +43,8 @@ void World::setCursorPosition(const ca::Vec2& position) {
 }
 
 void World::tick(F32 delta) {
-  for (auto& entity : m_entities) {
-    if (entity.movement.speed > 0.0f) {
-      ca::Vec2 d{ca::cosine(entity.movement.direction), ca::sine(entity.movement.direction)};
-      F32 distance = entity.movement.speed * 0.01f * delta;
-      entity.position += d * distance;
-
-      entity.movement.distanceTravelled += distance;
-
-      if (entity.movement.distanceTravelled > 5.0f) {
-        entity.movement.direction = ca::degrees((F32)(std::rand() % 360));
-        entity.movement.distanceTravelled = 0.0f;
-      }
-    }
-  }
+  m_resourceSystem.tick(m_entities, delta);
+  m_movementSystem.tick(m_entities, delta);
 }
 
 bool World::loadModels(hi::ResourceManager* resourceManager) {
@@ -93,6 +82,8 @@ EntityId World::createCommandCenter(const ca::Vec2& position) {
 
   entity.position = position;
 
+  entity.electricity.electricityDelta = 20;
+
   entity.render.model = m_models.commandCenter;
 
   return EntityId{result.index()};
@@ -104,6 +95,12 @@ EntityId World::createMiner(const ca::Vec2& position) {
   Entity& entity = result.element();
 
   entity.position = position;
+
+  entity.electricity.electricityDelta = -5;
+
+  entity.mining.timeSinceLastCycle = 0.0f;
+  entity.mining.cycleDuration = 100.0f;
+  entity.mining.mineralAmountPerCycle = 10;
 
   entity.render.model = m_models.miner;
 

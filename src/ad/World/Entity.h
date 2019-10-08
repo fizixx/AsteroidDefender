@@ -36,8 +36,20 @@ struct Entity {
   } building;
 
   struct {
+    I32 electricityDelta = 0;
+  } electricity;
+
+  struct {
+    F32 timeSinceLastCycle = 0.0f;
+    F32 cycleDuration = 0.0f;
+    I32 mineralAmountPerCycle = 0;
+  } mining;
+
+  struct {
     le::Model* model = nullptr;
   } render;
 };
+
+using EntityList = nu::DynamicArray<Entity>;
 
 #endif  // AD_WORLD_ENTITY_H_

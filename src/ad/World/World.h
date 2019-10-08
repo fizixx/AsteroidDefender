@@ -2,6 +2,9 @@
 #define WORLD_H_
 
 #include "ad/World/Entity.h"
+#include "ad/World/Resources.h"
+#include "ad/World/Systems/MovementSystem.h"
+#include "ad/World/Systems/ResourceSystem.h"
 #include "legion/World/Camera.h"
 #include "nucleus/Containers/DynamicArray.h"
 #include "nucleus/Macros.h"
@@ -22,6 +25,10 @@ class World {
 public:
   World() = default;
   ~World() = default;
+
+  auto resources() -> Resources* {
+    return &m_resources;
+  }
 
   bool initialize(hi::ResourceManager* resourceManager);
   void generate();
@@ -59,7 +66,12 @@ private:
 
   ca::Vec2 m_cursorPosition{ca::Vec2::zero};
 
-  nu::DynamicArray<Entity> m_entities;
+  EntityList m_entities;
+
+  Resources m_resources;
+
+  MovementSystem m_movementSystem;
+  ResourceSystem m_resourceSystem{&m_resources};
 };
 
 #endif  // WORLD_H_
