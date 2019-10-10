@@ -7,131 +7,39 @@
 #include "legion/Rendering/Rendering.h"
 #include "legion/World/Camera.h"
 
-bool World::initialize(hi::ResourceManager* resourceManager) {
-  if (!loadModels(resourceManager)) {
-    LOG(Error) << "Could not load world models.";
-    return false;
-  }
-
-  return true;
+auto World::clear() -> void {
+  m_entities.clear();
 }
 
-void World::generate() {
-  m_entities.clear();
-
-  createCommandCenter(ca::Vec2::zero);
-
-  createMiner(ca::Vec2{10.0f, 10.0f});
-  createMiner(ca::Vec2{5.0f, 10.0f});
-  createMiner(ca::Vec2{-5.0f, 5.0f});
-
-  for (U32 i = 0; i < 50; ++i) {
-    ca::Angle theta = ca::degrees((F32)(std::rand() % 360));
-    F32 distance = (F32)(std::rand() % 100);
-    createAsteroid(ca::Vec2{ca::cosine(theta) * distance, ca::sine(theta) * distance});
-  }
-
-  for (U32 i = 0; i < 50; ++i) {
-    ca::Angle theta = ca::degrees((F32)(std::rand() % 360));
-    F32 distance = (F32)(std::rand() % 100);
-    createEnemy(ca::Vec2{ca::cosine(theta) * distance, ca::sine(theta) * distance});
-  }
+auto World::addEntityFromPrefab(Entity* prefab, const ca::Vec2& position) -> EntityId {
+  auto result = m_entities.pushBack(*prefab);
+  result.element().position = position;
+  return EntityId{result.index()};
 }
 
 void World::setCursorPosition(const ca::Vec2& position) {
   m_cursorPosition = position;
 }
 
+auto World::getEntityUnderCursor() const -> EntityId {
+  // This is not a system right now, because the proper solution is probably not to go through each
+  // entity to check.
+
+  MemSize id = 0;
+  for (const auto& entity : m_entities) {
+    F32 distanceToCursor = ca::length(entity.position - m_cursorPosition);
+    if (distanceToCursor < entity.building.selectionRadius) {
+      return EntityId{id};
+    }
+    ++id;
+  }
+
+  return EntityId{};
+}
+
 void World::tick(F32 delta) {
   m_resourceSystem.tick(m_entities, delta);
   m_movementSystem.tick(m_entities, delta);
-}
-
-bool World::loadModels(hi::ResourceManager* resourceManager) {
-  m_models.commandCenter = resourceManager->get<le::Model>("command_center.dae");
-  if (!m_models.commandCenter) {
-    LOG(Error) << "Could not load command center model.";
-    return false;
-  }
-
-  m_models.miner = resourceManager->get<le::Model>("miner/miner.dae");
-  if (!m_models.miner) {
-    LOG(Error) << "Could not load miner model.";
-    return false;
-  }
-
-  m_models.asteroid = resourceManager->get<le::Model>("asteroid.dae");
-  if (!m_models.asteroid) {
-    LOG(Error) << "Could not load asteroid model.";
-    return false;
-  }
-
-  m_models.enemy = resourceManager->get<le::Model>("enemy.dae");
-  if (!m_models.enemy) {
-    LOG(Error) << "Could not load enemy model.";
-    return false;
-  }
-
-  return true;
-}
-
-EntityId World::createCommandCenter(const ca::Vec2& position) {
-  auto result = m_entities.emplaceBack();
-
-  Entity& entity = result.element();
-
-  entity.position = position;
-
-  entity.electricity.electricityDelta = 20;
-
-  entity.render.model = m_models.commandCenter;
-
-  return EntityId{result.index()};
-}
-
-EntityId World::createMiner(const ca::Vec2& position) {
-  auto result = m_entities.emplaceBack();
-
-  Entity& entity = result.element();
-
-  entity.position = position;
-
-  entity.electricity.electricityDelta = -5;
-
-  entity.mining.timeSinceLastCycle = 0.0f;
-  entity.mining.cycleDuration = 100.0f;
-  entity.mining.mineralAmountPerCycle = 10;
-
-  entity.render.model = m_models.miner;
-
-  return EntityId{result.index()};
-}
-
-EntityId World::createAsteroid(const ca::Vec2& position) {
-  auto result = m_entities.emplaceBack();
-
-  Entity& entity = result.element();
-
-  entity.position = position;
-
-  entity.render.model = m_models.asteroid;
-
-  return EntityId{result.index()};
-}
-
-EntityId World::createEnemy(const ca::Vec2& position) {
-  auto result = m_entities.emplaceBack();
-
-  Entity& entity = result.element();
-
-  entity.position = position;
-
-  entity.render.model = m_models.enemy;
-
-  entity.movement.direction = ca::degrees((F32)(std::rand() % 360));
-  entity.movement.speed = 1.0f + (F32)(std::rand() % 2);
-
-  return EntityId{result.index()};
 }
 
 void World::render(ca::Renderer* renderer, le::Camera* camera) {
@@ -154,6 +62,7 @@ void World::render(ca::Renderer* renderer, le::Camera* camera) {
     le::renderModel(renderer, *entity.render.model, final);
   }
 
+#if 0
   if (m_building.isBuilding) {
     auto translation = ca::translationMatrix(ca::Vec3{m_cursorPosition, 0.0f});
 
@@ -161,46 +70,5 @@ void World::render(ca::Renderer* renderer, le::Camera* camera) {
                  ca::createModelMatrix(translation, ca::Mat4::identity, ca::Mat4::identity);
     le::renderModel(renderer, *m_building.model, final);
   }
-}
-
-void World::startBuilding(BuildingType buildingType) {
-  m_building.isBuilding = true;
-  m_building.buildingType = buildingType;
-
-  switch (buildingType) {
-    case BuildingType::CommandCenter:
-      m_building.model = m_models.commandCenter;
-      break;
-
-    case BuildingType::Miner:
-      m_building.model = m_models.miner;
-      break;
-
-    default:
-      m_building.isBuilding = false;
-      break;
-  }
-}
-
-void World::build() {
-  if (!m_building.isBuilding) {
-    return;
-  }
-
-  switch (m_building.buildingType) {
-    case BuildingType::CommandCenter:
-      createCommandCenter(m_cursorPosition);
-      break;
-
-    case BuildingType::Miner:
-      createMiner(m_cursorPosition);
-      break;
-
-    default:
-      break;
-  }
-
-  m_building.isBuilding = false;
-  m_building.buildingType = BuildingType::Unknown;
-  m_building.model = nullptr;
+#endif
 }

@@ -1,4 +1,8 @@
+#include <ad/World/Entity.h>
 #include "ad/App/UserInterface.h"
+#include "ad/World/ConstructionController.h"
+#include "ad/World/Generator.h"
+#include "ad/World/Prefabs.h"
 #include "ad/World/World.h"
 #include "canvas/App.h"
 #include "canvas/Math/Intersection.h"
@@ -10,8 +14,7 @@
 
 class AsteroidDefender : public ca::WindowDelegate {
 public:
-  AsteroidDefender()
-    : ca::WindowDelegate{"Asteroid Defender"}, m_ray{{0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}} {}
+  AsteroidDefender() : ca::WindowDelegate{"Asteroid Defender"} {}
 
   ~AsteroidDefender() override = default;
 
@@ -28,12 +31,10 @@ public:
     m_resourceManager.addResourceLocatorBack(&m_physicalFileResourceLocator);
     m_resourceManager.setRenderer(renderer);
 
-    if (!m_world.initialize(&m_resourceManager)) {
-      LOG(Error) << "Could not initialize world.";
-      return false;
-    }
+    createPrefabs(&m_prefabs);
 
-    m_world.generate();
+    Generator generator;
+    generator.generate(&m_world, &m_prefabs);
 
     m_worldCamera.moveTo({0.0f, 0.0f, 5.0f});
     m_worldCamera.setNearPlane(0.1f);
@@ -71,7 +72,7 @@ public:
     }
 
     if (event.button == ca::MouseEvent::Button::Left) {
-      m_world.build();
+      m_constructionController.build();
       return true;
     }
 
@@ -138,7 +139,9 @@ public:
 
       ca::Plane worldPlane{-ca::Vec3::forward, 0.0f};
       auto result = ca::intersection(worldPlane, m_ray);
-      m_world.setCursorPosition({result.position.x, result.position.y});
+      ca::Vec2 cursorPosition{result.position.x, result.position.y};
+      m_world.setCursorPosition(cursorPosition);
+      m_constructionController.setCursorPosition(cursorPosition);
     }
 
     m_world.tick(delta);
@@ -151,6 +154,8 @@ public:
     le::Camera* camera = m_currentCamera->camera();
 
     m_world.render(renderer, camera);
+
+    m_constructionController.render(renderer, camera);
 
     glDisable(GL_DEPTH_TEST);
 
@@ -210,14 +215,44 @@ public:
 private:
   DELETE_COPY_AND_MOVE(AsteroidDefender);
 
+  static auto createPrefabs(Prefabs* prefabs) -> void {
+    prefabs->set(EntityType::CommandCenter,
+                 [](hi::ResourceManager* resourceManager, Entity* storage) {
+                   storage->electricity.electricityDelta = 20;
+                   storage->render.model = resourceManager->get<le::Model>("command_center.dae");
+                 });
+
+    prefabs->set(EntityType::Miner, [](hi::ResourceManager* resourceManager, Entity* storage) {
+      storage->electricity.electricityDelta = -5;
+
+      storage->mining.timeSinceLastCycle = 0.0f;
+      storage->mining.cycleDuration = 100.0f;
+      storage->mining.mineralAmountPerCycle = 10;
+
+      storage->render.model = resourceManager->get<le::Model>("miner/miner.dae");
+    });
+
+    prefabs->set(EntityType::Asteroid, [](hi::ResourceManager* resourceManager, Entity* storage) {
+      storage->render.model = resourceManager->get<le::Model>("asteroid.dae");
+    });
+
+    prefabs->set(EntityType::EnemyFighter,
+                 [](hi::ResourceManager* resourceManager, Entity* storage) {
+                   storage->render.model = resourceManager->get<le::Model>("enemy.dae");
+                 });
+  }
+
   le::ResourceManager m_resourceManager;
   hi::PhysicalFileResourceLocator m_physicalFileResourceLocator;
 
   le::Model* m_model = nullptr;
 
+  Prefabs m_prefabs{&m_resourceManager};
   World m_world;
 
-  UserInterface m_userInterface{&m_world};
+  ConstructionController m_constructionController{&m_world, &m_prefabs};
+
+  UserInterface m_userInterface{&m_constructionController, m_world.resources()};
 
   F32 m_fieldOfViewMovement = 0.0f;
 
@@ -227,7 +262,7 @@ private:
 
   le::CameraController* m_currentCamera = &m_worldCameraController;
 
-  ca::Ray m_ray;
+  ca::Ray m_ray{{0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}};
 
   // Client size of the area we're rendering the world into:
   ca::Size m_screenSize;

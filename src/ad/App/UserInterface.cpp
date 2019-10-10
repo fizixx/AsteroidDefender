@@ -1,4 +1,5 @@
 #include "ad/App/UserInterface.h"
+#include "ad/World/ConstructionController.h"
 #include "ad/World/World.h"
 #include "elastic/Views/ButtonView.h"
 #include "elastic/Views/LabelView.h"
@@ -11,22 +12,23 @@
 namespace {
 
 struct BuildClickListener : public el::ButtonView::OnClickListener {
-  World* world;
-  BuildingType buildingType;
+  ConstructionController* constructionController;
+  EntityType entityType;
 
-  BuildClickListener(World* world, BuildingType buildingType)
-    : world{world}, buildingType{buildingType} {}
+  BuildClickListener(ConstructionController* constructionController, EntityType entityType)
+    : constructionController{constructionController}, entityType{entityType} {}
 
   ~BuildClickListener() override = default;
 
   void onButtonClicked(el::ButtonView* sender) override {
-    world->startBuilding(buildingType);
+    constructionController->startBuilding(entityType);
   }
 };
 
 }  // namespace
 
-UserInterface::UserInterface(World* world) : m_world{world} {}
+UserInterface::UserInterface(ConstructionController* constructionController, Resources* resources)
+  : m_constructionController{constructionController}, m_resources{resources} {}
 
 auto UserInterface::initialize(ca::Renderer* renderer) -> bool {
   if (!m_ui.initialize(renderer)) {
@@ -48,14 +50,12 @@ auto UserInterface::initialize(ca::Renderer* renderer) -> bool {
 auto UserInterface::tick(F32 delta) -> void {
   m_ui.tick(delta);
 
-  auto resources = m_world->resources();
-
   Char buf[128];
 
-  sprintf_s(buf, sizeof(buf), "electricity: %d", resources->electricity());
+  sprintf_s(buf, sizeof(buf), "electricity: %d", m_resources->electricity());
   m_electricityLabel->setLabel(buf);
 
-  sprintf_s(buf, sizeof(buf), "minerals: %d", resources->minerals());
+  sprintf_s(buf, sizeof(buf), "minerals: %d", m_resources->minerals());
   m_mineralsLabel->setLabel(buf);
 }
 
@@ -81,15 +81,15 @@ auto UserInterface::createUI(el::Context* context, el::Font* font) -> bool {
   buttonContainer->setVerticalAlignment(el::Alignment::Bottom);
   buttonContainer->setMinSize(ca::Size{250, 0});
 
-  addBuildButton(buttonContainer, BuildingType::CommandCenter, "Command Center");
-  addBuildButton(buttonContainer, BuildingType::Miner, "Miner");
+  addBuildButton(buttonContainer, EntityType::CommandCenter, "Command Center");
+  addBuildButton(buttonContainer, EntityType::Miner, "Miner");
 
   return true;
 }
 
-auto UserInterface::addBuildButton(el::GroupView* container, BuildingType buildingType,
+auto UserInterface::addBuildButton(el::GroupView* container, EntityType entityType,
                                    const nu::StringView& label) -> void {
-  auto clickListener = new BuildClickListener{m_world, buildingType};
+  auto clickListener = new BuildClickListener{m_constructionController, entityType};
   auto button = new el::ButtonView{&m_ui, label, clickListener};
   button->setFont(&m_font);
   button->setMinSize(ca::Size{0, 45});

@@ -30,39 +30,17 @@ public:
     return &m_resources;
   }
 
-  bool initialize(hi::ResourceManager* resourceManager);
-  void generate();
+  auto clear() -> void;
+  auto addEntityFromPrefab(Entity* prefab, const ca::Vec2& position) -> EntityId;
 
   void setCursorPosition(const ca::Vec2& position);
+  auto getEntityUnderCursor() const -> EntityId;
 
   void tick(F32 delta);
   void render(ca::Renderer* renderer, le::Camera* camera);
 
-  void startBuilding(BuildingType buildingType);
-  void build();
-
 private:
   DELETE_COPY_AND_MOVE(World);
-
-  bool loadModels(hi::ResourceManager* resourceManager);
-
-  EntityId createCommandCenter(const ca::Vec2& position);
-  EntityId createMiner(const ca::Vec2& position);
-  EntityId createAsteroid(const ca::Vec2& position);
-  EntityId createEnemy(const ca::Vec2& position);
-
-  struct {
-    le::Model* commandCenter = nullptr;
-    le::Model* miner = nullptr;
-    le::Model* asteroid = nullptr;
-    le::Model* enemy = nullptr;
-  } m_models;
-
-  struct {
-    bool isBuilding = false;
-    BuildingType buildingType = BuildingType::Unknown;
-    le::Model* model = nullptr;
-  } m_building;
 
   ca::Vec2 m_cursorPosition{ca::Vec2::zero};
 

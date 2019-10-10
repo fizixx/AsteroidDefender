@@ -15,24 +15,36 @@ struct EntityId {
   }
 };
 
-enum class BuildingType : U32 {
-  Unknown = 0x00,
-  CommandCenter = 0x01,
-  Miner = 0x02,
+enum class EntityType : U32 {
+  Unknown = 0,
+
+  // Buildings
+  CommandCenter,
+  Miner,
+
+  // Static
+  Asteroid,
+
+  // Enemies
+  EnemyFighter,
+
+  // Count
+  Count,
 };
 
 struct Entity {
+  EntityType type = EntityType::Unknown;
   ca::Vec2 position = ca::Vec2::zero;
 
   struct {
-    ca::Angle direction = ca::degrees(0.0f);
+    ca::Angle direction = ca::Angle::zero;
     F32 speed = 0.0f;
 
     F32 distanceTravelled = 0.0f;
   } movement;
 
   struct {
-    BuildingType type = BuildingType::Unknown;
+    F32 selectionRadius = 0.0f;
   } building;
 
   struct {
