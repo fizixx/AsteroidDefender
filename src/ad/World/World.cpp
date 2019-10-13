@@ -3,6 +3,7 @@
 #include "Entity.h"
 #include "canvas/Math/Common.h"
 #include "canvas/Math/Transform.h"
+#include "canvas/Utils/ImmediateShapes.h"
 #include "hive/ResourceManager.h"
 #include "legion/Rendering/Rendering.h"
 #include "legion/World/Camera.h"
@@ -27,6 +28,10 @@ auto World::getEntityUnderCursor() const -> EntityId {
 
   MemSize id = 0;
   for (const auto& entity : m_entities) {
+    if (entity.building.selectionRadius == 0.0f) {
+      continue;
+    }
+
     F32 distanceToCursor = ca::length(entity.position - m_cursorPosition);
     if (distanceToCursor < entity.building.selectionRadius) {
       return EntityId{id};
@@ -53,22 +58,24 @@ void World::render(ca::Renderer* renderer, le::Camera* camera) {
 
   // Render the entities.
 
+  ca::ImmediateRenderer immediate{renderer};
+  immediate.setTransform(projectionAndView);
+
   for (auto& entity : m_entities) {
     auto translation = ca::translationMatrix(ca::Vec3{entity.position, 0.0f});
     auto rotation = ca::rotationMatrix(ca::Vec3{0.0f, 0.0f, 1.0f}, entity.movement.direction);
 
-    auto final =
-        projectionAndView * ca::createModelMatrix(translation, rotation, ca::Mat4::identity);
-    le::renderModel(renderer, *entity.render.model, final);
-  }
+    auto mvp = projectionAndView * ca::createModelMatrix(translation, rotation, ca::Mat4::identity);
 
-#if 0
-  if (m_building.isBuilding) {
-    auto translation = ca::translationMatrix(ca::Vec3{m_cursorPosition, 0.0f});
+    // Draw the entity circle.
 
-    auto final = projectionAndView *
-                 ca::createModelMatrix(translation, ca::Mat4::identity, ca::Mat4::identity);
-    le::renderModel(renderer, *m_building.model, final);
+    if (entity.building.selectionRadius > 0.0f) {
+      ca::drawCircle(&immediate, ca::Vec3{entity.position, 0.0f}, entity.building.selectionRadius,
+                     16, ca::Color::red);
+    }
+
+    // Draw entity model.
+
+    le::renderModel(renderer, *entity.render.model, mvp);
   }
-#endif
 }

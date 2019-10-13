@@ -71,9 +71,16 @@ public:
       return true;
     }
 
-    if (event.button == ca::MouseEvent::Button::Left) {
+    if (m_constructionController.isBuilding() && event.button == ca::MouseEvent::Button::Left) {
       m_constructionController.build();
       return true;
+    }
+
+    if (event.button == ca::MouseEvent::Button::Left) {
+      auto entityUnderCursor = m_world.getEntityUnderCursor();
+      if (entityUnderCursor.isValid()) {
+        LOG(Info) << "testing";
+      }
     }
 
     m_currentCamera->onMousePressed(
@@ -219,11 +226,14 @@ private:
     prefabs->set(EntityType::CommandCenter,
                  [](hi::ResourceManager* resourceManager, Entity* storage) {
                    storage->electricity.electricityDelta = 20;
+                   storage->building.selectionRadius = 1.5f;
                    storage->render.model = resourceManager->get<le::Model>("command_center.dae");
                  });
 
     prefabs->set(EntityType::Miner, [](hi::ResourceManager* resourceManager, Entity* storage) {
       storage->electricity.electricityDelta = -5;
+
+      storage->building.selectionRadius = 1.5f;
 
       storage->mining.timeSinceLastCycle = 0.0f;
       storage->mining.cycleDuration = 100.0f;
@@ -234,6 +244,8 @@ private:
 
     prefabs->set(EntityType::Asteroid, [](hi::ResourceManager* resourceManager, Entity* storage) {
       storage->render.model = resourceManager->get<le::Model>("asteroid.dae");
+
+      storage->building.selectionRadius = 0.5f;
     });
 
     prefabs->set(EntityType::EnemyFighter,

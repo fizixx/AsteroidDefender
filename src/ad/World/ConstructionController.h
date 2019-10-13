@@ -1,7 +1,6 @@
 #ifndef AD_WORLD_CONSTRUCTION_CONTROLLER_H_
 #define AD_WORLD_CONSTRUCTION_CONTROLLER_H_
 
-#include "Entity.h"
 #include "ad/World/Entity.h"
 #include "ad/World/Prefabs.h"
 #include "ad/World/World.h"
@@ -16,6 +15,10 @@ public:
 
   auto startBuilding(EntityType entityType) -> void {
     m_prefab = m_prefabs->get(entityType);
+  }
+
+  auto isBuilding() const -> bool {
+    return m_prefab != nullptr;
   }
 
   auto build() -> void {
