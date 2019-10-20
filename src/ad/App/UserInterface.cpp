@@ -28,7 +28,7 @@ struct BuildClickListener : public el::ButtonView::OnClickListener {
 }  // namespace
 
 UserInterface::UserInterface(ConstructionController* constructionController, Resources* resources)
-  : m_constructionController{constructionController}, m_resources{resources} {}
+  : m_resources{ resources }, m_constructionController{constructionController} {}
 
 auto UserInterface::initialize(ca::Renderer* renderer) -> bool {
   if (!m_ui.initialize(renderer)) {

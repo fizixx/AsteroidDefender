@@ -1,12 +1,13 @@
 #include "World.h"
 
-#include "Entity.h"
+#include "ad/World/Entity.h"
 #include "canvas/Math/Common.h"
 #include "canvas/Math/Transform.h"
 #include "canvas/Utils/ImmediateShapes.h"
 #include "hive/ResourceManager.h"
 #include "legion/Rendering/Rendering.h"
 #include "legion/World/Camera.h"
+#include "nucleus/Profiling.h"
 
 auto World::clear() -> void {
   m_entities.clear();
@@ -62,6 +63,8 @@ void World::render(ca::Renderer* renderer, le::Camera* camera) {
   immediate.setTransform(projectionAndView);
 
   for (auto& entity : m_entities) {
+    PROFILE("item")
+
     auto translation = ca::translationMatrix(ca::Vec3{entity.position, 0.0f});
     auto rotation = ca::rotationMatrix(ca::Vec3{0.0f, 0.0f, 1.0f}, entity.movement.direction);
 

@@ -1,6 +1,6 @@
-#include <ad/World/Entity.h>
 #include "ad/App/UserInterface.h"
 #include "ad/World/ConstructionController.h"
+#include "ad/World/Entity.h"
 #include "ad/World/Generator.h"
 #include "ad/World/Prefabs.h"
 #include "ad/World/World.h"
@@ -160,13 +160,19 @@ public:
 
     le::Camera* camera = m_currentCamera->camera();
 
-    m_world.render(renderer, camera);
+    {
+      PROFILE("render world")
+      m_world.render(renderer, camera);
+    }
 
     m_constructionController.render(renderer, camera);
 
     glDisable(GL_DEPTH_TEST);
 
-    m_userInterface.ui().render(renderer);
+    {
+      PROFILE("render user interface")
+      m_userInterface.ui().render(renderer);
+    }
   }
 
 #if 0
@@ -256,8 +262,6 @@ private:
 
   le::ResourceManager m_resourceManager;
   hi::PhysicalFileResourceLocator m_physicalFileResourceLocator;
-
-  le::Model* m_model = nullptr;
 
   Prefabs m_prefabs{&m_resourceManager};
   World m_world;
