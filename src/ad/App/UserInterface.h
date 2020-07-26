@@ -15,6 +15,8 @@ class World;
 
 class UserInterface {
 public:
+  NU_DELETE_COPY_AND_MOVE(UserInterface);
+
   UserInterface(ConstructionController* constructionController, Resources* resources);
 
   auto initialize(ca::Renderer* renderer) -> bool;
@@ -25,8 +27,6 @@ public:
   }
 
 private:
-  DELETE_COPY_AND_MOVE(UserInterface);
-
   auto createUI(el::Context* context, el::Font* font) -> bool;
   auto addBuildButton(el::GroupView* container, EntityType entityType, const nu::StringView& label)
       -> void;

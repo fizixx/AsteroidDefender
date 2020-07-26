@@ -14,6 +14,8 @@
 
 class AsteroidDefender : public ca::WindowDelegate {
 public:
+  NU_DELETE_COPY_AND_MOVE(AsteroidDefender);
+
   AsteroidDefender() : ca::WindowDelegate{"Asteroid Defender"} {}
 
   ~AsteroidDefender() override = default;
@@ -226,8 +228,6 @@ public:
 #endif  // 0
 
 private:
-  DELETE_COPY_AND_MOVE(AsteroidDefender);
-
   static auto createPrefabs(Prefabs* prefabs) -> void {
     prefabs->set(EntityType::CommandCenter,
                  [](hi::ResourceManager* resourceManager, Entity* storage) {

@@ -1,4 +1,7 @@
 #include "ad/App/UserInterface.h"
+
+#include <cstdio>
+
 #include "ad/World/ConstructionController.h"
 #include "ad/World/World.h"
 #include "elastic/Views/ButtonView.h"
@@ -6,8 +9,6 @@
 #include "elastic/Views/LinearSizerView.h"
 #include "nucleus/FilePath.h"
 #include "nucleus/Streams/FileInputStream.h"
-
-#include <cstdio>
 
 namespace {
 
@@ -20,7 +21,7 @@ struct BuildClickListener : public el::ButtonView::OnClickListener {
 
   ~BuildClickListener() override = default;
 
-  void onButtonClicked(el::ButtonView* sender) override {
+  void onButtonClicked(el::ButtonView* NU_UNUSED(sender)) override {
     constructionController->startBuilding(entityType);
   }
 };
@@ -28,7 +29,7 @@ struct BuildClickListener : public el::ButtonView::OnClickListener {
 }  // namespace
 
 UserInterface::UserInterface(ConstructionController* constructionController, Resources* resources)
-  : m_resources{ resources }, m_constructionController{constructionController} {}
+  : m_resources{resources}, m_constructionController{constructionController} {}
 
 auto UserInterface::initialize(ca::Renderer* renderer) -> bool {
   if (!m_ui.initialize(renderer)) {
@@ -36,7 +37,7 @@ auto UserInterface::initialize(ca::Renderer* renderer) -> bool {
   }
 
 #if OS(POSIX)
-  nu::FileInputStream fontStream{nu::FilePath{"/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"}};
+  nu::FileInputStream fontStream{nu::FilePath{"/Library/Fonts/Arial Unicode.ttf"}};
 #elif OS(MACOSX)
   nu::FileInputStream fontStream{nu::FilePath{R"(/Library/Fonts/Arial.ttf)"}};
 #else
@@ -52,14 +53,22 @@ auto UserInterface::tick(F32 delta) -> void {
 
   Char buf[128];
 
+#if COMPILER(MSVC)
   sprintf_s(buf, sizeof(buf), "electricity: %d", m_resources->electricity());
+#else
+  sprintf(buf, "electricity: %d", m_resources->electricity());
+#endif
   m_electricityLabel->setLabel(buf);
 
+#if COMPILER(MSVC)
   sprintf_s(buf, sizeof(buf), "minerals: %d", m_resources->minerals());
+#else
+  sprintf(buf, "minerals: %d", m_resources->minerals());
+#endif
   m_mineralsLabel->setLabel(buf);
 }
 
-auto UserInterface::createUI(el::Context* context, el::Font* font) -> bool {
+auto UserInterface::createUI(el::Context* context, el::Font* NU_UNUSED(font)) -> bool {
   el::ContextView* rootView = context->getRootView();
 
   auto resourcesContainer = new el::LinearSizerView{&m_ui};
@@ -69,10 +78,10 @@ auto UserInterface::createUI(el::Context* context, el::Font* font) -> bool {
   resourcesContainer->setVerticalAlignment(el::Alignment::Top);
 
   m_electricityLabel = new el::LabelView{&m_ui, "0", &m_font};
-  resourcesContainer->addChild(m_electricityLabel);
+  //  resourcesContainer->addChild(m_electricityLabel);
 
   m_mineralsLabel = new el::LabelView{&m_ui, "0", &m_font};
-  resourcesContainer->addChild(m_mineralsLabel);
+  //  resourcesContainer->addChild(m_mineralsLabel);
 
   auto buttonContainer = new el::LinearSizerView{&m_ui};
   rootView->addChild(buttonContainer);

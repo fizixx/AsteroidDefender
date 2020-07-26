@@ -23,6 +23,8 @@ struct Model;
 
 class World {
 public:
+  NU_DELETE_COPY_AND_MOVE(World);
+
   World() = default;
   ~World() = default;
 
@@ -40,8 +42,6 @@ public:
   void render(ca::Renderer* renderer, le::Camera* camera);
 
 private:
-  DELETE_COPY_AND_MOVE(World);
-
   ca::Vec2 m_cursorPosition{ca::Vec2::zero};
 
   EntityList m_entities;
