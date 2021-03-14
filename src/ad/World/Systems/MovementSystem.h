@@ -11,11 +11,11 @@ struct MovementSystem {
         F32 distance = entity.movement.speed * 0.01f * delta;
         entity.position += d * distance;
 
-        entity.movement.distanceTravelled += distance;
+        entity.movement.distance_travelled += distance;
 
-        if (entity.movement.distanceTravelled > 5.0f) {
+        if (entity.movement.distance_travelled > 5.0f) {
           entity.movement.direction = fl::degrees((F32)(std::rand() % 360));
-          entity.movement.distanceTravelled = 0.0f;
+          entity.movement.distance_travelled = 0.0f;
         }
       }
     }

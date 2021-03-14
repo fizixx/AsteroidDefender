@@ -1,5 +1,4 @@
-#ifndef AD_WORLD_CONSTRUCTION_CONTROLLER_H_
-#define AD_WORLD_CONSTRUCTION_CONTROLLER_H_
+#pragma once
 
 #include "ad/World/Entity.h"
 #include "ad/World/Prefabs.h"
@@ -11,32 +10,32 @@
 class ConstructionController {
 public:
   explicit ConstructionController(World* world, Prefabs* prefabs)
-    : m_world{world}, m_prefabs{prefabs} {}
+    : world_{world}, prefabs_{prefabs} {}
 
-  auto startBuilding(EntityType entityType) -> void {
-    m_prefab = m_prefabs->get(entityType);
+  auto start_building(EntityType entity_type) -> void {
+    prefab_ = prefabs_->get(entity_type);
   }
 
-  auto isBuilding() const -> bool {
-    return m_prefab != nullptr;
+  NU_NO_DISCARD auto is_building() const -> bool {
+    return prefab_ != nullptr;
   }
 
   auto build() -> void {
-    if (!m_prefab) {
+    if (!prefab_) {
       return;
     }
 
-    m_world->addEntityFromPrefab(m_prefab, m_cursorPosition);
+    world_->add_entity_from_prefab(prefab_, cursor_position_);
 
-    m_prefab = nullptr;
+    prefab_ = nullptr;
   }
 
-  auto setCursorPosition(const fl::Vec2& cursorPosition) -> void {
-    m_cursorPosition = cursorPosition;
+  auto set_cursor_position(const fl::Vec2& cursor_position) -> void {
+    cursor_position_ = cursor_position;
   }
 
   auto render(ca::Renderer* renderer, le::Camera* camera) -> void {
-    if (!m_prefab) {
+    if (!prefab_) {
       return;
     }
 
@@ -45,17 +44,15 @@ public:
     camera->updateProjectionMatrix(&projection);
     camera->updateViewMatrix(&view);
 
-    auto final = projection * view * fl::translationMatrix(fl::Vec3{m_cursorPosition, 0.0f});
+    auto final = projection * view * fl::translationMatrix(fl::Vec3{cursor_position_, 0.0f});
 
-    le::renderModel(renderer, *m_prefab->render.model, final);
+    le::renderModel(renderer, *prefab_->render.model, final);
   }
 
 private:
-  World* m_world;
-  Prefabs* m_prefabs;
+  World* world_;
+  Prefabs* prefabs_;
 
-  fl::Vec2 m_cursorPosition{fl::Vec2::zero};
-  Entity* m_prefab = nullptr;
+  fl::Vec2 cursor_position_ = fl::Vec2::zero;
+  Entity* prefab_ = nullptr;
 };
-
-#endif  // AD_WORLD_CONSTRUCTION_CONTROLLER_H_

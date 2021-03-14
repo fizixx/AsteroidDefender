@@ -1,53 +1,51 @@
-#ifndef AD_WORLD_GENERATOR_H_
-#define AD_WORLD_GENERATOR_H_
+#pragma once
 
 #include "ad/World/Prefabs.h"
 #include "ad/World/World.h"
+#include "floats/Random.h"
 
 class Generator {
 public:
-  auto generate(World* world, Prefabs* prefabs) -> void {
-    Entity* commandCenter = prefabs->get(EntityType::CommandCenter);
+  static auto generate(World* world, Prefabs* prefabs) -> void {
+    Entity* command_center = prefabs->get(EntityType::CommandCenter);
     Entity* miner = prefabs->get(EntityType::Miner);
     Entity* asteroid = prefabs->get(EntityType::Asteroid);
-    Entity* enemyFighter = prefabs->get(EntityType::EnemyFighter);
+    Entity* enemy_fighter = prefabs->get(EntityType::EnemyFighter);
 
     world->clear();
 
-    auto createCommandCenter = [&](const fl::Vec2& position) {
-      world->addEntityFromPrefab(commandCenter, position);
+    auto create_command_center = [&](const fl::Vec2& position) {
+      world->add_entity_from_prefab(command_center, position);
     };
 
-    auto createMiner = [&](const fl::Vec2& position) {
-      world->addEntityFromPrefab(miner, position);
+    auto create_miner = [&](const fl::Vec2& position) {
+      world->add_entity_from_prefab(miner, position);
     };
 
-    auto createAsteroid = [&](const fl::Vec2& position) {
-      world->addEntityFromPrefab(asteroid, position);
+    auto create_asteroid = [&](const fl::Vec2& position) {
+      world->add_entity_from_prefab(asteroid, position);
     };
 
-    auto createEnemyFighter = [&](const fl::Vec2& position) {
-      world->addEntityFromPrefab(enemyFighter, position);
+    auto create_enemy_fighter = [&](const fl::Vec2& position) {
+      world->add_entity_from_prefab(enemy_fighter, position);
     };
 
-    createCommandCenter(fl::Vec2::zero);
+    create_command_center(fl::Vec2::zero);
 
-    createMiner(fl::Vec2{10.0f, 10.0f});
-    createMiner(fl::Vec2{5.0f, 10.0f});
-    createMiner(fl::Vec2{-5.0f, 5.0f});
+    create_miner(fl::Vec2{10.0f, 10.0f});
+    create_miner(fl::Vec2{5.0f, 10.0f});
+    create_miner(fl::Vec2{-5.0f, 5.0f});
 
     for (U32 i = 0; i < 50; ++i) {
-      fl::Angle theta = fl::degrees((F32)(std::rand() % 360));
-      F32 distance = (F32)(std::rand() % 100);
-      createAsteroid(fl::Vec2{fl::cosine(theta) * distance, fl::sine(theta) * distance});
+      fl::Angle theta = fl::degrees((F32)(fl::randomInt() % 360));
+      F32 distance = (F32)(fl::randomInt() % 100);
+      create_asteroid(fl::Vec2{fl::cosine(theta) * distance, fl::sine(theta) * distance});
     }
 
     for (U32 i = 0; i < 50; ++i) {
-      fl::Angle theta = fl::degrees((F32)(std::rand() % 360));
-      F32 distance = (F32)(std::rand() % 100);
-      createEnemyFighter(fl::Vec2{fl::cosine(theta) * distance, fl::sine(theta) * distance});
+      fl::Angle theta = fl::degrees((F32)(fl::randomInt() % 360));
+      F32 distance = (F32)(fl::randomInt() % 100);
+      create_enemy_fighter(fl::Vec2{fl::cosine(theta) * distance, fl::sine(theta) * distance});
     }
   }
 };
-
-#endif  // AD_WORLD_GENERATOR_H_

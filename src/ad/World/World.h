@@ -1,5 +1,4 @@
-#ifndef WORLD_H_
-#define WORLD_H_
+#pragma once
 
 #include "ad/World/Entity.h"
 #include "ad/World/Resources.h"
@@ -17,10 +16,6 @@ namespace hi {
 class ResourceManager;
 }
 
-namespace re {
-struct Model;
-}
-
 class World {
 public:
   NU_DELETE_COPY_AND_MOVE(World);
@@ -28,28 +23,26 @@ public:
   World() = default;
   ~World() = default;
 
-  auto resources() -> Resources* {
-    return &m_resources;
+  Resources* resources() {
+    return &resources_;
   }
 
-  auto clear() -> void;
-  auto addEntityFromPrefab(Entity* prefab, const fl::Vec2& position) -> EntityId;
+  void clear();
+  EntityId add_entity_from_prefab(Entity* prefab, const fl::Vec2& position);
 
-  void setCursorPosition(const fl::Vec2& position);
-  auto getEntityUnderCursor() const -> EntityId;
+  void set_cursor_position(const fl::Vec2& position);
+  NU_NO_DISCARD EntityId get_entity_under_cursor() const;
 
   void tick(F32 delta);
   void render(ca::Renderer* renderer, le::Camera* camera);
 
 private:
-  fl::Vec2 m_cursorPosition{fl::Vec2::zero};
+  fl::Vec2 cursor_position_ = fl::Vec2::zero;
 
-  EntityList m_entities;
+  EntityList entities_;
 
-  Resources m_resources;
+  Resources resources_;
 
-  MovementSystem m_movementSystem;
-  ResourceSystem m_resourceSystem{&m_resources};
+  MovementSystem movement_system_;
+  ResourceSystem resource_system_{&resources_};
 };
-
-#endif  // WORLD_H_

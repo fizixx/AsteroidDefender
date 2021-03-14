@@ -1,17 +1,16 @@
-#ifndef AD_WORLD_ENTITY_H_
-#define AD_WORLD_ENTITY_H_
+#pragma once
 
 #include "floats/Common.h"
 #include "floats/Vec2.h"
 #include "legion/Resources/Model.h"
 
-const MemSize kInvalidEntityId = std::numeric_limits<MemSize>::max();
+const MemSize k_invalid_entity_id = std::numeric_limits<MemSize>::max();
 
 struct EntityId {
-  MemSize id = kInvalidEntityId;
+  MemSize id = k_invalid_entity_id;
 
-  bool isValid() {
-    return id != kInvalidEntityId;
+  NU_NO_DISCARD bool is_valid() const {
+    return id != k_invalid_entity_id;
   }
 };
 
@@ -36,32 +35,30 @@ struct Entity {
   EntityType type = EntityType::Unknown;
   fl::Vec2 position = fl::Vec2::zero;
 
-  struct {
+  struct Movement {
     fl::Angle direction = fl::Angle::zero;
     F32 speed = 0.0f;
 
-    F32 distanceTravelled = 0.0f;
+    F32 distance_travelled = 0.0f;
   } movement;
 
-  struct {
-    F32 selectionRadius = 0.0f;
+  struct Building {
+    F32 selection_radius = 0.0f;
   } building;
 
-  struct {
-    I32 electricityDelta = 0;
+  struct Electricity{
+    I32 electricity_delta = 0;
   } electricity;
 
-  struct {
-    F32 timeSinceLastCycle = 0.0f;
-    F32 cycleDuration = 0.0f;
-    I32 mineralAmountPerCycle = 0;
+  struct Mining {
+    F32 time_since_last_cycle = 0.0f;
+    F32 cycle_duration = 0.0f;
+    I32 mineral_amount_per_cycle = 0;
   } mining;
 
-  struct {
+  struct Render {
     le::Model* model = nullptr;
   } render;
 };
 
 using EntityList = nu::DynamicArray<Entity>;
-
-#endif  // AD_WORLD_ENTITY_H_

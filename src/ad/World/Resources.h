@@ -1,5 +1,4 @@
-#ifndef AD_WORLD_RESOURCES_H_
-#define AD_WORLD_RESOURCES_H_
+#pragma once
 
 #include "nucleus/Types.h"
 
@@ -7,30 +6,28 @@ class Resources {
 public:
   Resources() = default;
 
-  auto electricity() const -> I32 {
-    return m_electricity;
+  NU_NO_DISCARD auto electricity() const -> I32 {
+    return electricity_;
   }
 
-  auto minerals() const -> I32 {
-    return m_minerals;
+  NU_NO_DISCARD auto minerals() const -> I32 {
+    return minerals_;
   }
 
-  auto setElectricity(I32 electricity) -> void {
-    m_electricity = electricity;
+  auto set_electricity(I32 electricity) -> void {
+    electricity_ = electricity;
   }
 
-  auto addMinerals(I32 minerals) -> void {
-    m_minerals += minerals;
+  auto add_minerals(I32 minerals) -> void {
+    minerals_ += minerals;
   }
 
   void reset(I32 electricity, I32 minerals) {
-    m_electricity = electricity;
-    m_minerals = minerals;
+    electricity_ = electricity;
+    minerals_ = minerals;
   }
 
 private:
-  I32 m_electricity = 0;
-  I32 m_minerals = 0;
+  I32 electricity_ = 0;
+  I32 minerals_ = 0;
 };
-
-#endif  // AD_WORLD_RESOURCES_H_

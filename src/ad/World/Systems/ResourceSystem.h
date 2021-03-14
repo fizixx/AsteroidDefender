@@ -17,20 +17,20 @@ struct ResourceSystem {
     for (auto& entity : entities) {
       // Electricity
 
-      totalElectricity += entity.electricity.electricityDelta;
+      totalElectricity += entity.electricity.electricity_delta;
 
       // Mining
 
-      entity.mining.timeSinceLastCycle += delta;
-      if (entity.mining.timeSinceLastCycle >= entity.mining.cycleDuration) {
-        entity.mining.timeSinceLastCycle -= entity.mining.cycleDuration;
+      entity.mining.time_since_last_cycle += delta;
+      if (entity.mining.time_since_last_cycle >= entity.mining.cycle_duration) {
+        entity.mining.time_since_last_cycle -= entity.mining.cycle_duration;
 
-        totalMinerals += entity.mining.mineralAmountPerCycle;
+        totalMinerals += entity.mining.mineral_amount_per_cycle;
       }
     }
 
-    resources->setElectricity(totalElectricity);
-    resources->addMinerals(totalMinerals);
+    resources->set_electricity(totalElectricity);
+    resources->add_minerals(totalMinerals);
   }
 };
 

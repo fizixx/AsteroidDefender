@@ -13,95 +13,95 @@
 namespace {
 
 struct BuildClickListener : public el::ButtonView::OnClickListener {
-  ConstructionController* constructionController;
-  EntityType entityType;
+  ConstructionController* construction_controller;
+  EntityType entity_type;
 
-  BuildClickListener(ConstructionController* constructionController, EntityType entityType)
-    : constructionController{constructionController}, entityType{entityType} {}
+  BuildClickListener(ConstructionController* construction_controller, EntityType entity_type)
+    : construction_controller{construction_controller}, entity_type{entity_type} {}
 
   ~BuildClickListener() override = default;
 
   void onButtonClicked(el::ButtonView* NU_UNUSED(sender)) override {
-    constructionController->startBuilding(entityType);
+    construction_controller->start_building(entity_type);
   }
 };
 
 }  // namespace
 
-UserInterface::UserInterface(ConstructionController* constructionController, Resources* resources)
-  : m_resources{resources}, m_constructionController{constructionController} {}
+UserInterface::UserInterface(ConstructionController* construction_controller, Resources* resources)
+  : resources_{resources}, construction_controller_{construction_controller} {}
 
 auto UserInterface::initialize(ca::Renderer* renderer) -> bool {
-  if (!m_ui.initialize(renderer)) {
+  if (!ui_.initialize(renderer)) {
     return false;
   }
 
 #if OS(POSIX)
   // nu::FileInputStream fontStream{nu::FilePath{"/Library/Fonts/Arial Unicode.ttf"}};
-  nu::FileInputStream fontStream{nu::FilePath{"/usr/share/fonts/TTF/DejaVuSans.ttf"}};
+  nu::FileInputStream font_stream{nu::FilePath{"/usr/share/fonts/TTF/DejaVuSans.ttf"}};
 #elif OS(MACOSX)
-  nu::FileInputStream fontStream{nu::FilePath{R"(/Library/Fonts/Arial.ttf)"}};
+  nu::FileInputStream font_stream{nu::FilePath{R"(/Library/Fonts/Arial.ttf)"}};
 #else
-  nu::FileInputStream fontStream{nu::FilePath{R"(C:\Windows\Fonts\Arial.ttf)"}};
+  nu::FileInputStream font_stream{nu::FilePath{R"(C:\Windows\Fonts\Arial.ttf)"}};
 #endif
-  m_font.load(&fontStream, renderer, 30);
+  font_.load(&font_stream, renderer, 30);
 
-  return createUI(&m_ui, &m_font);
+  return create_ui(&ui_, &font_);
 }
 
 auto UserInterface::tick(F32 delta) -> void {
-  m_ui.tick(delta);
+  ui_.tick(delta);
 
   Char buf[128];
 
 #if COMPILER(MSVC)
-  sprintf_s(buf, sizeof(buf), "electricity: %d", m_resources->electricity());
+  sprintf_s(buf, sizeof(buf), "electricity: %d", m_resources_->electricity());
 #else
-  sprintf(buf, "electricity: %d", m_resources->electricity());
+  sprintf(buf, "electricity: %d", resources_->electricity());
 #endif
-  m_electricityLabel->setLabel(buf);
+  electricity_label_->setLabel(buf);
 
 #if COMPILER(MSVC)
-  sprintf_s(buf, sizeof(buf), "minerals: %d", m_resources->minerals());
+  sprintf_s(buf, sizeof(buf), "minerals: %d", m_resources_->minerals());
 #else
-  sprintf(buf, "minerals: %d", m_resources->minerals());
+  sprintf(buf, "minerals: %d", resources_->minerals());
 #endif
-  m_mineralsLabel->setLabel(buf);
+  minerals_label_->setLabel(buf);
 }
 
-auto UserInterface::createUI(el::Context* context, el::Font* NU_UNUSED(font)) -> bool {
-  el::ContextView* rootView = context->getRootView();
+auto UserInterface::create_ui(el::Context* context, el::Font* NU_UNUSED(font)) -> bool {
+  el::ContextView* root_view = context->getRootView();
 
-  auto resourcesContainer = new el::LinearSizerView{&m_ui};
-  rootView->addChild(resourcesContainer);
-  resourcesContainer->setOrientation(el::Orientation::Vertical);
-  resourcesContainer->setHorizontalAlignment(el::Alignment::Left);
-  resourcesContainer->setVerticalAlignment(el::Alignment::Top);
+  auto resources_container = new el::LinearSizerView{&ui_};
+  root_view->addChild(resources_container);
+  resources_container->setOrientation(el::Orientation::Vertical);
+  resources_container->setHorizontalAlignment(el::Alignment::Left);
+  resources_container->setVerticalAlignment(el::Alignment::Top);
 
-  m_electricityLabel = new el::LabelView{&m_ui, "0", &m_font};
+  electricity_label_ = new el::LabelView{&ui_, "0", &font_};
   //  resourcesContainer->addChild(m_electricityLabel);
 
-  m_mineralsLabel = new el::LabelView{&m_ui, "0", &m_font};
+  minerals_label_ = new el::LabelView{&ui_, "0", &font_};
   //  resourcesContainer->addChild(m_mineralsLabel);
 
-  auto buttonContainer = new el::LinearSizerView{&m_ui};
-  rootView->addChild(buttonContainer);
-  buttonContainer->setOrientation(el::Orientation::Vertical);
-  buttonContainer->setHorizontalAlignment(el::Alignment::Left);
-  buttonContainer->setVerticalAlignment(el::Alignment::Bottom);
-  buttonContainer->setMinSize(fl::Size{250, 0});
+  auto button_container = new el::LinearSizerView{&ui_};
+  root_view->addChild(button_container);
+  button_container->setOrientation(el::Orientation::Vertical);
+  button_container->setHorizontalAlignment(el::Alignment::Left);
+  button_container->setVerticalAlignment(el::Alignment::Bottom);
+  button_container->setMinSize(fl::Size{250, 0});
 
-  addBuildButton(buttonContainer, EntityType::CommandCenter, "Command Center");
-  addBuildButton(buttonContainer, EntityType::Miner, "Miner");
+  add_build_button(button_container, EntityType::CommandCenter, "Command Center");
+  add_build_button(button_container, EntityType::Miner, "Miner");
 
   return true;
 }
 
-auto UserInterface::addBuildButton(el::GroupView* container, EntityType entityType,
-                                   const nu::StringView& label) -> void {
-  auto clickListener = new BuildClickListener{m_constructionController, entityType};
-  auto button = new el::ButtonView{&m_ui, label, clickListener};
-  button->setFont(&m_font);
+auto UserInterface::add_build_button(el::GroupView* container, EntityType entity_type,
+                                     const nu::StringView& label) -> void {
+  auto click_listener = new BuildClickListener{construction_controller_, entity_type};
+  auto button = new el::ButtonView{&ui_, label, click_listener};
+  button->setFont(&font_);
   button->setMinSize(fl::Size{0, 45});
   button->setExpansion(el::Expansion::Horizontal);
   container->addChild(button);

@@ -17,28 +17,28 @@ class UserInterface {
 public:
   NU_DELETE_COPY_AND_MOVE(UserInterface);
 
-  UserInterface(ConstructionController* constructionController, Resources* resources);
+  UserInterface(ConstructionController* construction_controller, Resources* resources);
 
   auto initialize(ca::Renderer* renderer) -> bool;
   auto tick(F32 delta) -> void;
 
   el::Context& ui() {
-    return m_ui;
+    return ui_;
   }
 
 private:
-  auto createUI(el::Context* context, el::Font* font) -> bool;
-  auto addBuildButton(el::GroupView* container, EntityType entityType, const nu::StringView& label)
-      -> void;
+  auto create_ui(el::Context* context, el::Font* font) -> bool;
+  auto add_build_button(el::GroupView* container, EntityType entity_type,
+                        const nu::StringView& label) -> void;
 
-  el::Font m_font;
-  el::Context m_ui;
+  el::Font font_;
+  el::Context ui_;
 
-  el::LabelView* m_electricityLabel;
-  el::LabelView* m_mineralsLabel;
+  el::LabelView* electricity_label_ = nullptr;
+  el::LabelView* minerals_label_ = nullptr;
 
-  Resources* m_resources;
-  ConstructionController* m_constructionController;
+  Resources* resources_;
+  ConstructionController* construction_controller_;
 };
 
 #endif  // AD_APP_USER_INTERFACE_H_

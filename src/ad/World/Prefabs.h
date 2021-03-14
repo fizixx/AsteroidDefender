@@ -1,5 +1,4 @@
-#ifndef AD_WORLD_PREFABS_H_
-#define AD_WORLD_PREFABS_H_
+#pragma once
 
 #include "ad/World/Entity.h"
 #include "hive/ResourceManager.h"
@@ -8,11 +7,11 @@
 
 class Prefabs {
 public:
-  explicit Prefabs(hi::ResourceManager* resourceManager) : m_resourceManager{resourceManager} {}
+  explicit Prefabs(hi::ResourceManager* resource_manager) : resource_manager_{resource_manager} {}
 
-  auto get(EntityType entityType) -> Entity* {
-    auto it = m_prefabs.find(entityType);
-    if (it == m_prefabs.end()) {
+  auto get(EntityType entity_type) -> Entity* {
+    auto it = prefabs_.find(entity_type);
+    if (it == prefabs_.end()) {
       return nullptr;
     }
 
@@ -20,18 +19,16 @@ public:
   }
 
   template <typename Func>
-  auto set(EntityType entityType, Func func) -> void {
-    m_prefabs[entityType] = {};
+  auto set(EntityType entity_type, Func func) -> void {
+    prefabs_[entity_type] = {};
 
-    Entity* storage = &m_prefabs[entityType];
-    storage->type = entityType;
+    Entity* storage = &prefabs_[entity_type];
+    storage->type = entity_type;
 
-    func(m_resourceManager, storage);
+    func(resource_manager_, storage);
   }
 
 private:
-  hi::ResourceManager* m_resourceManager;
-  std::unordered_map<EntityType, Entity> m_prefabs;
+  hi::ResourceManager* resource_manager_;
+  std::unordered_map<EntityType, Entity> prefabs_;
 };
-
-#endif  // AD_WORLD_PREFABS_H_
