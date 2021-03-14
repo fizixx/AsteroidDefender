@@ -4,7 +4,7 @@
 #include "ad/World/Entity.h"
 #include "ad/World/Prefabs.h"
 #include "ad/World/World.h"
-#include "canvas/Math/Transform.h"
+#include "floats/Transform.h"
 #include "legion/Rendering/Rendering.h"
 #include "legion/World/Camera.h"
 
@@ -31,7 +31,7 @@ public:
     m_prefab = nullptr;
   }
 
-  auto setCursorPosition(const ca::Vec2& cursorPosition) -> void {
+  auto setCursorPosition(const fl::Vec2& cursorPosition) -> void {
     m_cursorPosition = cursorPosition;
   }
 
@@ -40,12 +40,12 @@ public:
       return;
     }
 
-    ca::Mat4 projection{ca::Mat4::identity}, view{ca::Mat4::identity};
+    fl::Mat4 projection{fl::Mat4::identity}, view{fl::Mat4::identity};
 
     camera->updateProjectionMatrix(&projection);
     camera->updateViewMatrix(&view);
 
-    auto final = projection * view * ca::translationMatrix(ca::Vec3{m_cursorPosition, 0.0f});
+    auto final = projection * view * fl::translationMatrix(fl::Vec3{m_cursorPosition, 0.0f});
 
     le::renderModel(renderer, *m_prefab->render.model, final);
   }
@@ -54,7 +54,7 @@ private:
   World* m_world;
   Prefabs* m_prefabs;
 
-  ca::Vec2 m_cursorPosition{ca::Vec2::zero};
+  fl::Vec2 m_cursorPosition{fl::Vec2::zero};
   Entity* m_prefab = nullptr;
 };
 

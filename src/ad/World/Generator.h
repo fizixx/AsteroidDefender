@@ -14,38 +14,38 @@ public:
 
     world->clear();
 
-    auto createCommandCenter = [&](const ca::Vec2& position) {
+    auto createCommandCenter = [&](const fl::Vec2& position) {
       world->addEntityFromPrefab(commandCenter, position);
     };
 
-    auto createMiner = [&](const ca::Vec2& position) {
+    auto createMiner = [&](const fl::Vec2& position) {
       world->addEntityFromPrefab(miner, position);
     };
 
-    auto createAsteroid = [&](const ca::Vec2& position) {
+    auto createAsteroid = [&](const fl::Vec2& position) {
       world->addEntityFromPrefab(asteroid, position);
     };
 
-    auto createEnemyFighter = [&](const ca::Vec2& position) {
+    auto createEnemyFighter = [&](const fl::Vec2& position) {
       world->addEntityFromPrefab(enemyFighter, position);
     };
 
-    createCommandCenter(ca::Vec2::zero);
+    createCommandCenter(fl::Vec2::zero);
 
-    createMiner(ca::Vec2{10.0f, 10.0f});
-    createMiner(ca::Vec2{5.0f, 10.0f});
-    createMiner(ca::Vec2{-5.0f, 5.0f});
+    createMiner(fl::Vec2{10.0f, 10.0f});
+    createMiner(fl::Vec2{5.0f, 10.0f});
+    createMiner(fl::Vec2{-5.0f, 5.0f});
 
     for (U32 i = 0; i < 50; ++i) {
-      ca::Angle theta = ca::degrees((F32)(std::rand() % 360));
+      fl::Angle theta = fl::degrees((F32)(std::rand() % 360));
       F32 distance = (F32)(std::rand() % 100);
-      createAsteroid(ca::Vec2{ca::cosine(theta) * distance, ca::sine(theta) * distance});
+      createAsteroid(fl::Vec2{fl::cosine(theta) * distance, fl::sine(theta) * distance});
     }
 
     for (U32 i = 0; i < 50; ++i) {
-      ca::Angle theta = ca::degrees((F32)(std::rand() % 360));
+      fl::Angle theta = fl::degrees((F32)(std::rand() % 360));
       F32 distance = (F32)(std::rand() % 100);
-      createEnemyFighter(ca::Vec2{ca::cosine(theta) * distance, ca::sine(theta) * distance});
+      createEnemyFighter(fl::Vec2{fl::cosine(theta) * distance, fl::sine(theta) * distance});
     }
   }
 };

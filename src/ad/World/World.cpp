@@ -1,25 +1,24 @@
 #include "World.h"
 
 #include "ad/World/Entity.h"
-#include "canvas/Math/Common.h"
-#include "canvas/Math/Transform.h"
 #include "canvas/Utils/ImmediateShapes.h"
+#include "floats/Common.h"
+#include "floats/Transform.h"
 #include "hive/ResourceManager.h"
 #include "legion/Rendering/Rendering.h"
-#include "legion/World/Camera.h"
 #include "nucleus/Profiling.h"
 
 auto World::clear() -> void {
   m_entities.clear();
 }
 
-auto World::addEntityFromPrefab(Entity* prefab, const ca::Vec2& position) -> EntityId {
+auto World::addEntityFromPrefab(Entity* prefab, const fl::Vec2& position) -> EntityId {
   auto result = m_entities.pushBack(*prefab);
   result.element().position = position;
   return EntityId{result.index()};
 }
 
-void World::setCursorPosition(const ca::Vec2& position) {
+void World::setCursorPosition(const fl::Vec2& position) {
   m_cursorPosition = position;
 }
 
@@ -33,7 +32,7 @@ auto World::getEntityUnderCursor() const -> EntityId {
       continue;
     }
 
-    F32 distanceToCursor = ca::length(entity.position - m_cursorPosition);
+    F32 distanceToCursor = fl::length(entity.position - m_cursorPosition);
     if (distanceToCursor < entity.building.selectionRadius) {
       return EntityId{id};
     }
@@ -49,10 +48,10 @@ void World::tick(F32 delta) {
 }
 
 void World::render(ca::Renderer* renderer, le::Camera* camera) {
-  ca::Mat4 projection = ca::Mat4::identity;
+  fl::Mat4 projection = fl::Mat4::identity;
   camera->updateProjectionMatrix(&projection);
 
-  ca::Mat4 view = ca::Mat4::identity;
+  fl::Mat4 view = fl::Mat4::identity;
   camera->updateViewMatrix(&view);
 
   auto projectionAndView = projection * view;
@@ -65,15 +64,15 @@ void World::render(ca::Renderer* renderer, le::Camera* camera) {
   for (auto& entity : m_entities) {
     PROFILE("item")
 
-    auto translation = ca::translationMatrix(ca::Vec3{entity.position, 0.0f});
-    auto rotation = ca::rotationMatrix(ca::Vec3{0.0f, 0.0f, 1.0f}, entity.movement.direction);
+    auto translation = fl::translationMatrix(fl::Vec3{entity.position, 0.0f});
+    auto rotation = fl::rotationMatrix(fl::Vec3{0.0f, 0.0f, 1.0f}, entity.movement.direction);
 
-    auto mvp = projectionAndView * ca::createModelMatrix(translation, rotation, ca::Mat4::identity);
+    auto mvp = projectionAndView * fl::createModelMatrix(translation, rotation, fl::Mat4::identity);
 
     // Draw the entity circle.
 
     if (entity.building.selectionRadius > 0.0f) {
-      ca::drawCircle(&immediate, ca::Vec3{entity.position, 0.0f}, entity.building.selectionRadius,
+      ca::drawCircle(&immediate, fl::Vec3{entity.position, 0.0f}, entity.building.selectionRadius,
                      16, ca::Color::red);
     }
 

@@ -1,8 +1,8 @@
 #ifndef AD_WORLD_ENTITY_H_
 #define AD_WORLD_ENTITY_H_
 
-#include "canvas/Math/Common.h"
-#include "canvas/Math/Vec2.h"
+#include "floats/Common.h"
+#include "floats/Vec2.h"
 #include "legion/Resources/Model.h"
 
 const MemSize kInvalidEntityId = std::numeric_limits<MemSize>::max();
@@ -34,10 +34,10 @@ enum class EntityType : U32 {
 
 struct Entity {
   EntityType type = EntityType::Unknown;
-  ca::Vec2 position = ca::Vec2::zero;
+  fl::Vec2 position = fl::Vec2::zero;
 
   struct {
-    ca::Angle direction = ca::Angle::zero;
+    fl::Angle direction = fl::Angle::zero;
     F32 speed = 0.0f;
 
     F32 distanceTravelled = 0.0f;

@@ -37,7 +37,8 @@ auto UserInterface::initialize(ca::Renderer* renderer) -> bool {
   }
 
 #if OS(POSIX)
-  nu::FileInputStream fontStream{nu::FilePath{"/Library/Fonts/Arial Unicode.ttf"}};
+  // nu::FileInputStream fontStream{nu::FilePath{"/Library/Fonts/Arial Unicode.ttf"}};
+  nu::FileInputStream fontStream{nu::FilePath{"/usr/share/fonts/TTF/DejaVuSans.ttf"}};
 #elif OS(MACOSX)
   nu::FileInputStream fontStream{nu::FilePath{R"(/Library/Fonts/Arial.ttf)"}};
 #else
@@ -88,7 +89,7 @@ auto UserInterface::createUI(el::Context* context, el::Font* NU_UNUSED(font)) ->
   buttonContainer->setOrientation(el::Orientation::Vertical);
   buttonContainer->setHorizontalAlignment(el::Alignment::Left);
   buttonContainer->setVerticalAlignment(el::Alignment::Bottom);
-  buttonContainer->setMinSize(ca::Size{250, 0});
+  buttonContainer->setMinSize(fl::Size{250, 0});
 
   addBuildButton(buttonContainer, EntityType::CommandCenter, "Command Center");
   addBuildButton(buttonContainer, EntityType::Miner, "Miner");
@@ -101,7 +102,7 @@ auto UserInterface::addBuildButton(el::GroupView* container, EntityType entityTy
   auto clickListener = new BuildClickListener{m_constructionController, entityType};
   auto button = new el::ButtonView{&m_ui, label, clickListener};
   button->setFont(&m_font);
-  button->setMinSize(ca::Size{0, 45});
+  button->setMinSize(fl::Size{0, 45});
   button->setExpansion(el::Expansion::Horizontal);
   container->addChild(button);
 }

@@ -5,8 +5,8 @@
 #include "ad/World/Prefabs.h"
 #include "ad/World/World.h"
 #include "canvas/App.h"
-#include "canvas/Math/Intersection.h"
 #include "canvas/OpenGL.h"
+#include "floats/Intersection.h"
 #include "hive/PhysicalResourceLocator.h"
 #include "legion/Controllers/TopDownCameraController.h"
 #include "legion/Resources/ResourceManager.h"
@@ -47,7 +47,7 @@ public:
     return true;
   }
 
-  void onWindowResized(const ca::Size& size) override {
+  void onWindowResized(const fl::Size& size) override {
     WindowDelegate::onWindowResized(size);
 
     m_screenSize = size;
@@ -146,9 +146,9 @@ public:
       m_ray = m_worldCamera.createRayForMouse(
           le::Camera::convertScreenPositionToClipSpace(m_currentMousePosition, m_screenSize));
 
-      ca::Plane worldPlane{-ca::Vec3::forward, 0.0f};
-      auto result = ca::intersection(worldPlane, m_ray);
-      ca::Vec2 cursorPosition{result.position.x, result.position.y};
+      fl::Plane worldPlane{-fl::Vec3::forward, 0.0f};
+      auto result = fl::intersection(worldPlane, m_ray);
+      fl::Vec2 cursorPosition{result.position.x, result.position.y};
       m_world.setCursorPosition(cursorPosition);
       m_constructionController.setCursorPosition(cursorPosition);
     }
@@ -249,7 +249,8 @@ private:
     });
 
     prefabs->set(EntityType::Asteroid, [](hi::ResourceManager* resourceManager, Entity* storage) {
-      storage->render.model = resourceManager->get<le::Model>("asteroid.dae");
+      // storage->render.model = resourceManager->get<le::Model>("asteroid.dae");
+      storage->render.model = resourceManager->get<le::Model>("command_center.dae");
 
       storage->building.selectionRadius = 0.5f;
     });
@@ -272,19 +273,19 @@ private:
 
   F32 m_fieldOfViewMovement = 0.0f;
 
-  le::Camera m_worldCamera{ca::degrees(45.0f), {0.0f, 0.0f, 1.0f}};
+  le::Camera m_worldCamera{fl::degrees(45.0f), {0.0f, 0.0f, 1.0f}};
   le::TopDownCameraController m_worldCameraController{
-      &m_worldCamera, {ca::Vec3::forward, 0.0f}, 25.0f};
+      &m_worldCamera, {fl::Vec3::forward, 0.0f}, 25.0f};
 
   le::CameraController* m_currentCamera = &m_worldCameraController;
 
-  ca::Ray m_ray{{0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}};
+  fl::Ray m_ray{{0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}};
 
   // Client size of the area we're rendering the world into:
-  ca::Size m_screenSize;
+  fl::Size m_screenSize;
 
   // Position of the cursor on the screen in range ([0..m_size.width], [0..m_size.height]}.
-  ca::Pos m_currentMousePosition;
+  fl::Pos m_currentMousePosition;
 };
 
 CANVAS_APP(AsteroidDefender)

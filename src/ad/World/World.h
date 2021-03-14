@@ -33,16 +33,16 @@ public:
   }
 
   auto clear() -> void;
-  auto addEntityFromPrefab(Entity* prefab, const ca::Vec2& position) -> EntityId;
+  auto addEntityFromPrefab(Entity* prefab, const fl::Vec2& position) -> EntityId;
 
-  void setCursorPosition(const ca::Vec2& position);
+  void setCursorPosition(const fl::Vec2& position);
   auto getEntityUnderCursor() const -> EntityId;
 
   void tick(F32 delta);
   void render(ca::Renderer* renderer, le::Camera* camera);
 
 private:
-  ca::Vec2 m_cursorPosition{ca::Vec2::zero};
+  fl::Vec2 m_cursorPosition{fl::Vec2::zero};
 
   EntityList m_entities;
 
