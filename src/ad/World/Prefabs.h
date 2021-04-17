@@ -3,6 +3,7 @@
 #include "ad/World/Entity.h"
 #include "hive/ResourceManager.h"
 #include "nucleus/Containers/hash_map.h"
+#include "nucleus/function.h"
 
 class Prefabs {
 public:
@@ -17,8 +18,7 @@ public:
     return &it->value;
   }
 
-  template <typename Func>
-  auto set(EntityType entity_type, Func func) -> void {
+  void set(EntityType entity_type, nu::Function<void(hi::ResourceManager*, Entity*)>&& func) {
     prefabs_.set((MemSize)entity_type, {});
     auto it = prefabs_.find((MemSize)entity_type);
     Entity* storage = &it->value;

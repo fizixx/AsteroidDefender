@@ -13,9 +13,9 @@
 #include "nucleus/FilePath.h"
 
 class AsteroidDefender : public ca::WindowDelegate {
-public:
   NU_DELETE_COPY_AND_MOVE(AsteroidDefender);
 
+public:
   AsteroidDefender() : ca::WindowDelegate{"Asteroid Defender"} {}
 
   ~AsteroidDefender() override = default;
@@ -35,8 +35,7 @@ public:
 
     create_prefabs(&prefabs_);
 
-    Generator generator;
-    generator.generate(&world_, &prefabs_);
+    Generator::generate(&world_, &prefabs_);
 
     world_camera_.moveTo({0.0f, 0.0f, 5.0f});
     world_camera_.setNearPlane(0.1f);
