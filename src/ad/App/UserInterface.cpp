@@ -55,14 +55,14 @@ auto UserInterface::tick(F32 delta) -> void {
   Char buf[128];
 
 #if COMPILER(MSVC)
-  sprintf_s(buf, sizeof(buf), "electricity: %d", m_resources_->electricity());
+  sprintf_s(buf, sizeof(buf), "electricity: %d", resources_->electricity());
 #else
   sprintf(buf, "electricity: %d", resources_->electricity());
 #endif
   electricity_label_->setLabel(buf);
 
 #if COMPILER(MSVC)
-  sprintf_s(buf, sizeof(buf), "minerals: %d", m_resources_->minerals());
+  sprintf_s(buf, sizeof(buf), "minerals: %d", resources_->minerals());
 #else
   sprintf(buf, "minerals: %d", resources_->minerals());
 #endif
