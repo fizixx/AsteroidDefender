@@ -58,8 +58,8 @@ public:
     user_interface_.ui().resize(size);
   }
 
-  void onMouseMoved(const ca::MouseEvent& event) override {
-    user_interface_.ui().onMouseMoved(event);
+  void on_mouse_moved(const ca::MouseEvent& event) override {
+    user_interface_.ui().on_mouse_moved(event);
 
     current_mouse_position_ = event.pos;
 
@@ -68,7 +68,7 @@ public:
   }
 
   bool onMousePressed(const ca::MouseEvent& event) override {
-    if (user_interface_.ui().onMousePressed(event)) {
+    if (user_interface_.ui().on_mouse_pressed(event)) {
       return true;
     }
 
@@ -90,21 +90,21 @@ public:
     return false;
   }
 
-  void onMouseReleased(const ca::MouseEvent& event) override {
-    user_interface_.ui().onMouseReleased(event);
+  void on_mouse_released(const ca::MouseEvent& event) override {
+    user_interface_.ui().on_mouse_released(event);
 
     current_camera_->onMouseReleased(
         event.button, le::Camera::convertScreenPositionToClipSpace(event.pos, screen_size_));
   }
 
-  void onMouseWheel(const ca::MouseWheelEvent& event) override {
-    user_interface_.ui().onMouseWheel(event);
+  void on_mouse_wheel(const ca::MouseWheelEvent& event) override {
+    user_interface_.ui().on_mouse_wheel(event);
 
     current_camera_->onMouseWheel(
         {static_cast<F32>(event.wheelOffset.x), static_cast<F32>(event.wheelOffset.y)});
   }
 
-  void onKeyPressed(const ca::KeyEvent& event) override {
+  void on_key_pressed(const ca::KeyEvent& event) override {
     current_camera_->onKeyPressed(event.key);
 
     switch (event.key) {
@@ -121,7 +121,7 @@ public:
     }
   }
 
-  void onKeyReleased(const ca::KeyEvent& event) override {
+  void on_key_released(const ca::KeyEvent& event) override {
     current_camera_->onKeyReleased(event.key);
 
     switch (event.key) {
