@@ -57,7 +57,6 @@ void World::render(ca::Renderer* renderer, le::Camera* camera) {
   // Render the entities.
 
   ca::ImmediateRenderer immediate{renderer};
-  immediate.setTransform(projection_and_view);
 
   for (auto& entity : entities_) {
     PROFILE("item")
@@ -70,6 +69,8 @@ void World::render(ca::Renderer* renderer, le::Camera* camera) {
 
     // Draw the entity circle.
 
+
+    // TODO: set projection_and_view
     if (entity.building.selection_radius > 0.0f) {
       ca::drawCircle(&immediate, fl::Vec3{entity.position, 0.0f}, entity.building.selection_radius,
                      16, ca::Color::red);

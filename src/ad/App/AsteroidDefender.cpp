@@ -63,11 +63,11 @@ public:
 
     current_mouse_position_ = event.pos;
 
-    current_camera_->onMouseMoved(
-        le::Camera::convertScreenPositionToClipSpace(event.pos, screen_size_));
+    //current_camera_->on_mouse_moved(
+    //    le::Camera::convertScreenPositionToClipSpace(event.pos, screen_size_));
   }
 
-  bool onMousePressed(const ca::MouseEvent& event) override {
+  bool on_mouse_pressed(const ca::MouseEvent& event) override {
     if (user_interface_.ui().on_mouse_pressed(event)) {
       return true;
     }
@@ -84,8 +84,8 @@ public:
       }
     }
 
-    current_camera_->onMousePressed(
-        event.button, le::Camera::convertScreenPositionToClipSpace(event.pos, screen_size_));
+//    current_camera_->onMousePressed(
+//        event.button, le::Camera::convertScreenPositionToClipSpace(event.pos, screen_size_));
 
     return false;
   }
@@ -93,19 +93,19 @@ public:
   void on_mouse_released(const ca::MouseEvent& event) override {
     user_interface_.ui().on_mouse_released(event);
 
-    current_camera_->onMouseReleased(
-        event.button, le::Camera::convertScreenPositionToClipSpace(event.pos, screen_size_));
+//    current_camera_->onMouseReleased(
+//        event.button, le::Camera::convertScreenPositionToClipSpace(event.pos, screen_size_));
   }
 
   void on_mouse_wheel(const ca::MouseWheelEvent& event) override {
     user_interface_.ui().on_mouse_wheel(event);
 
-    current_camera_->onMouseWheel(
-        {static_cast<F32>(event.wheelOffset.x), static_cast<F32>(event.wheelOffset.y)});
+//    current_camera_->onMouseWheel(
+//        {static_cast<F32>(event.wheelOffset.x), static_cast<F32>(event.wheelOffset.y)});
   }
 
   void on_key_pressed(const ca::KeyEvent& event) override {
-    current_camera_->onKeyPressed(event.key);
+//    current_camera_->onKeyPressed(event.key);
 
     switch (event.key) {
       case ca::Key::LBracket:
@@ -122,7 +122,7 @@ public:
   }
 
   void on_key_released(const ca::KeyEvent& event) override {
-    current_camera_->onKeyReleased(event.key);
+//    current_camera_->onKeyReleased(event.key);
 
     switch (event.key) {
       case ca::Key::LBracket:

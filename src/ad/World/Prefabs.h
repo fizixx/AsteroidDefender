@@ -15,13 +15,12 @@ public:
       return nullptr;
     }
 
-    return &it->value;
+    return &it->second;
   }
 
   void set(EntityType entity_type, nu::Function<void(hi::ResourceManager*, Entity*)>&& func) {
-    prefabs_.set((MemSize)entity_type, {});
-    auto it = prefabs_.find((MemSize)entity_type);
-    Entity* storage = &it->value;
+    auto [it, inserted] = prefabs_.insert({(MemSize)entity_type, {}});
+    Entity* storage = &it->second;
 
     storage->type = entity_type;
 
@@ -30,5 +29,5 @@ public:
 
 private:
   hi::ResourceManager* resource_manager_;
-  nu::HashMap<MemSize, Entity> prefabs_;
+  std::unordered_map<MemSize, Entity> prefabs_;
 };
