@@ -3,6 +3,7 @@
 #include "floats/Common.h"
 #include "floats/Vec2.h"
 #include "legion/Resources/Model.h"
+#include "nucleus/hash.h"
 
 const MemSize k_invalid_entity_id = std::numeric_limits<MemSize>::max();
 
@@ -31,6 +32,13 @@ enum class EntityType : U32 {
   Count,
 };
 
+template <>
+struct nu::Hash<EntityType> {
+  static HashedValue hashed(EntityType entity_type) {
+    return hash_dword(static_cast<U32>(entity_type));
+  }
+};
+
 struct Entity {
   EntityType type = EntityType::Unknown;
   fl::Vec2 position = fl::Vec2::zero;
@@ -46,7 +54,7 @@ struct Entity {
     F32 selection_radius = 0.0f;
   } building;
 
-  struct Electricity{
+  struct Electricity {
     I32 electricity_delta = 0;
   } electricity;
 
