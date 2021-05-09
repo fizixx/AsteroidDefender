@@ -69,4 +69,5 @@ struct Entity {
   } render;
 };
 
-using EntityList = nu::DynamicArray<Entity>;
+// using EntityList = nu::DynamicArray<Entity>;
+using EntityList = std::vector<Entity>;

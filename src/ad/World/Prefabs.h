@@ -18,13 +18,13 @@ public:
     return &result.value();
   }
 
-  void set(EntityType entity_type, nu::Function<void(hi::ResourceManager*, Entity*)>&& func) {
+  bool set(EntityType entity_type, nu::Function<bool(hi::ResourceManager*, Entity*)>&& func) {
     auto result = prefabs_.insert(entity_type, {});
     Entity* storage = &result.value();
 
     storage->type = entity_type;
 
-    func(resource_manager_, storage);
+    return func(resource_manager_, storage);
   }
 
 private:

@@ -1,5 +1,7 @@
 #include "ad/App/UserInterface.h"
 
+#include <silhouette/image.h>
+
 #include <cstdio>
 
 #include "ad/World/ConstructionController.h"
@@ -45,6 +47,23 @@ auto UserInterface::initialize(ca::Renderer* renderer) -> bool {
   nu::FileInputStream font_stream{nu::FilePath{R"(C:\Windows\Fonts\Arial.ttf)"}};
 #endif
   font_.load(&font_stream, renderer, 30);
+
+  {
+    nu::FileInputStream stream{nu::FilePath{R"(C:\Code\elastic\assets\button_bg.png)"}};
+    si::Image background;
+    if (!background.load_from_png(&stream)) {
+      return false;
+    }
+
+    auto texture_id =
+        renderer->createTexture(ca::TextureFormat::RGBA, background.size(),
+                                background.data().data(), background.data().size(), false);
+    if (!texture_id) {
+      return false;
+    }
+
+    button_background_ = el::Image{texture_id, background.size()};
+  }
 
   return create_ui(&ui_, &font_);
 }
@@ -104,5 +123,6 @@ auto UserInterface::add_build_button(el::GroupView* container, EntityType entity
   button->setFont(&font_);
   button->setMinSize(fl::Size{0, 45});
   button->setExpansion(el::Expansion::Horizontal);
+  button->background(button_background_);
   container->addChild(button);
 }

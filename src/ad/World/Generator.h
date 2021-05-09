@@ -12,6 +12,11 @@ public:
     Entity* asteroid = prefabs->get(EntityType::Asteroid);
     Entity* enemy_fighter = prefabs->get(EntityType::EnemyFighter);
 
+    DCHECK(command_center);
+    DCHECK(miner);
+    DCHECK(asteroid);
+    DCHECK(enemy_fighter);
+
     world->clear();
 
     auto create_command_center = [&](const fl::Vec2& position) {
@@ -32,6 +37,7 @@ public:
 
     create_command_center(fl::Vec2::zero);
 
+#if 0
     create_miner(fl::Vec2{10.0f, 10.0f});
     create_miner(fl::Vec2{5.0f, 10.0f});
     create_miner(fl::Vec2{-5.0f, 5.0f});
@@ -47,5 +53,6 @@ public:
       F32 distance = (F32)(fl::randomInt() % 100);
       create_enemy_fighter(fl::Vec2{fl::cosine(theta) * distance, fl::sine(theta) * distance});
     }
+#endif  // 0
   }
 };

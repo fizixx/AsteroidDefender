@@ -34,6 +34,8 @@ private:
   el::Font font_;
   el::Context ui_;
 
+  el::Image button_background_;
+
   el::LabelView* electricity_label_ = nullptr;
   el::LabelView* minerals_label_ = nullptr;
 

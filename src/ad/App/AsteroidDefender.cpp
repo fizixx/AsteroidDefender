@@ -30,10 +30,12 @@ public:
     auto assets_path = nu::getCurrentWorkingDirectory() / "assets";
     LOG(Info) << "Assets path: " << assets_path.getPath();
     physical_file_resource_locator_.setRootPath(assets_path);
-    resource_manager_.addResourceLocatorBack(&physical_file_resource_locator_);
+    resource_manager_.add_resource_locator(&physical_file_resource_locator_);
     resource_manager_.setRenderer(renderer);
 
-    create_prefabs(&prefabs_);
+    if (!create_prefabs(&prefabs_)) {
+      return false;
+    }
 
     Generator::generate(&world_, &prefabs_);
 
@@ -59,15 +61,18 @@ public:
   }
 
   void on_mouse_moved(const ca::MouseEvent& event) override {
+#if 0
     user_interface_.ui().on_mouse_moved(event);
 
     current_mouse_position_ = event.pos;
 
-    //current_camera_->on_mouse_moved(
-    //    le::Camera::convertScreenPositionToClipSpace(event.pos, screen_size_));
+    current_camera_->onMouseMoved(
+        le::Camera::convertScreenPositionToClipSpace(event.pos, screen_size_));
+#endif  // 0
   }
 
   bool on_mouse_pressed(const ca::MouseEvent& event) override {
+#if 0
     if (user_interface_.ui().on_mouse_pressed(event)) {
       return true;
     }
@@ -86,26 +91,32 @@ public:
 
 //    current_camera_->onMousePressed(
 //        event.button, le::Camera::convertScreenPositionToClipSpace(event.pos, screen_size_));
+#endif  // 0
 
     return false;
   }
 
   void on_mouse_released(const ca::MouseEvent& event) override {
+#if 0
     user_interface_.ui().on_mouse_released(event);
 
-//    current_camera_->onMouseReleased(
-//        event.button, le::Camera::convertScreenPositionToClipSpace(event.pos, screen_size_));
+    current_camera_->onMouseReleased(
+        event.button, le::Camera::convertScreenPositionToClipSpace(event.pos, screen_size_));
+#endif  // 0
   }
 
   void on_mouse_wheel(const ca::MouseWheelEvent& event) override {
+#if 0
     user_interface_.ui().on_mouse_wheel(event);
 
-//    current_camera_->onMouseWheel(
-//        {static_cast<F32>(event.wheelOffset.x), static_cast<F32>(event.wheelOffset.y)});
+    current_camera_->onMouseWheel(
+        {static_cast<F32>(event.wheelOffset.x), static_cast<F32>(event.wheelOffset.y)});
+#endif  // 0
   }
 
   void on_key_pressed(const ca::KeyEvent& event) override {
-//    current_camera_->onKeyPressed(event.key);
+#if 0
+    current_camera_->onKeyPressed(event.key);
 
     switch (event.key) {
       case ca::Key::LBracket:
@@ -119,10 +130,12 @@ public:
       default:
         break;
     }
+#endif  // 0
   }
 
   void on_key_released(const ca::KeyEvent& event) override {
-//    current_camera_->onKeyReleased(event.key);
+#if 0
+    current_camera_->onKeyReleased(event.key);
 
     switch (event.key) {
       case ca::Key::LBracket:
@@ -136,6 +149,7 @@ public:
       default:
         break;
     }
+#endif  // 0
   }
 
   void tick(F32 delta) override {
@@ -157,7 +171,7 @@ public:
   }
 
   void onRender(ca::Renderer* renderer) override {
-    glEnable(GL_DEPTH_TEST);
+    renderer->state().depth_test(true);
 
     le::Camera* camera = current_camera_->camera();
 
@@ -174,6 +188,8 @@ public:
       PROFILE("render user interface")
       user_interface_.ui().render(renderer);
     }
+
+    renderer->state().depth_test(false);
   }
 
 #if 0
@@ -227,37 +243,71 @@ public:
 #endif  // 0
 
 private:
-  static auto create_prefabs(Prefabs* prefabs) -> void {
-    prefabs->set(EntityType::CommandCenter,
-                 [](hi::ResourceManager* resource_manager, Entity* storage) {
-                   storage->electricity.electricity_delta = 20;
-                   storage->building.selection_radius = 1.5f;
-                   storage->render.model = resource_manager->get<le::Model>("command_center.dae");
-                 });
+  static bool create_prefabs(Prefabs* prefabs) {
+    if (!prefabs->set(EntityType::CommandCenter,
+                      [](hi::ResourceManager* resource_manager, Entity* storage) -> bool {
+                        storage->electricity.electricity_delta = 20;
+                        storage->building.selection_radius = 1.5f;
+                        storage->render.model =
+                            resource_manager->get<le::Model>("command_center.dae");
+                        if (!storage->render.model) {
+                          return false;
+                        }
 
-    prefabs->set(EntityType::Miner, [](hi::ResourceManager* resource_manager, Entity* storage) {
-      storage->electricity.electricity_delta = -5;
+                        return true;
+                      })) {
+      return false;
+    }
 
-      storage->building.selection_radius = 1.5f;
+    if (!prefabs->set(EntityType::Miner,
+                      [](hi::ResourceManager* resource_manager, Entity* storage) -> bool {
+                        storage->electricity.electricity_delta = -5;
 
-      storage->mining.time_since_last_cycle = 0.0f;
-      storage->mining.cycle_duration = 100.0f;
-      storage->mining.mineral_amount_per_cycle = 10;
+                        storage->building.selection_radius = 1.5f;
 
-      storage->render.model = resource_manager->get<le::Model>("miner/miner.dae");
-    });
+                        storage->mining.time_since_last_cycle = 0.0f;
+                        storage->mining.cycle_duration = 100.0f;
+                        storage->mining.mineral_amount_per_cycle = 10;
 
-    prefabs->set(EntityType::Asteroid, [](hi::ResourceManager* resource_manager, Entity* storage) {
-      // storage->render.model = resourceManager->get<le::Model>("asteroid.dae");
-      storage->render.model = resource_manager->get<le::Model>("command_center.dae");
+                        storage->render.model = resource_manager->get<le::Model>("miner.dae");
+                        if (!storage->render.model) {
+                          return false;
+                        }
 
-      storage->building.selection_radius = 0.5f;
-    });
+                        return true;
+                      })) {
+      return false;
+    }
 
-    prefabs->set(EntityType::EnemyFighter,
-                 [](hi::ResourceManager* resource_manager, Entity* storage) {
-                   storage->render.model = resource_manager->get<le::Model>("enemy.dae");
-                 });
+    if (!prefabs->set(EntityType::Asteroid,
+                      [](hi::ResourceManager* resource_manager, Entity* storage) -> bool {
+                        // storage->render.model = resourceManager->get<le::Model>("asteroid.dae");
+                        storage->render.model =
+                            resource_manager->get<le::Model>("command_center.dae");
+                        if (!storage->render.model) {
+                          return false;
+                        }
+
+                        storage->building.selection_radius = 0.5f;
+
+                        return true;
+                      })) {
+      return false;
+    }
+
+    if (!prefabs->set(EntityType::EnemyFighter,
+                      [](hi::ResourceManager* resource_manager, Entity* storage) -> bool {
+                        storage->render.model = resource_manager->get<le::Model>("enemy.dae");
+                        if (!storage->render.model) {
+                          return false;
+                        }
+
+                        return true;
+                      })) {
+      return false;
+    }
+
+    return true;
   }
 
   le::ResourceManager resource_manager_;
@@ -287,4 +337,6 @@ private:
   fl::Pos current_mouse_position_;
 };
 
+#if !defined(AS_TESTS)
 CANVAS_APP(AsteroidDefender)
+#endif

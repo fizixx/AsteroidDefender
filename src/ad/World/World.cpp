@@ -11,9 +11,10 @@ void World::clear() {
 }
 
 EntityId World::add_entity_from_prefab(Entity* prefab, const fl::Vec2& position) {
-  auto result = entities_.pushBack(*prefab);
-  result.element().position = position;
-  return EntityId{result.index()};
+  auto new_id = entities_.size();
+  auto result = entities_.emplace_back(*prefab);
+  result.position = position;
+  return EntityId{new_id};
 }
 
 void World::set_cursor_position(const fl::Vec2& position) {
@@ -68,7 +69,6 @@ void World::render(ca::Renderer* renderer, le::Camera* camera) {
         projection_and_view * fl::createModelMatrix(translation, rotation, fl::Mat4::identity);
 
     // Draw the entity circle.
-
 
     // TODO: set projection_and_view
     if (entity.building.selection_radius > 0.0f) {
