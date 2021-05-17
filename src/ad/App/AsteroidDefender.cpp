@@ -7,7 +7,7 @@
 #include "canvas/App.h"
 #include "canvas/OpenGL.h"
 #include "floats/Intersection.h"
-#include "hive/PhysicalResourceLocator.h"
+#include "hive/physical_file_locator.h"
 #include "legion/Controllers/TopDownCameraController.h"
 #include "legion/Resources/ResourceManager.h"
 #include "nucleus/FilePath.h"
@@ -29,21 +29,27 @@ public:
 
     auto assets_path = nu::getCurrentWorkingDirectory() / "assets";
     LOG(Info) << "Assets path: " << assets_path.getPath();
-    physical_file_resource_locator_.setRootPath(assets_path);
-    resource_manager_.add_resource_locator(&physical_file_resource_locator_);
-    resource_manager_.setRenderer(renderer);
+    auto locator = nu::makeScopedRefPtr<hi::PhysicalFileLocator>(assets_path);
+    resource_manager_ = nu::makeScopedPtr<le::ResourceManager>(std::move(locator));
 
-    if (!create_prefabs(&prefabs_)) {
+    prefabs_ = nu::makeScopedPtr<Prefabs>(resource_manager_.get());
+    if (!create_prefabs(prefabs_.get())) {
       return false;
     }
 
-    Generator::generate(&world_, &prefabs_);
+    Generator::generate(&world_, prefabs_.get());
 
     world_camera_.moveTo({0.0f, 0.0f, 5.0f});
     world_camera_.setNearPlane(0.1f);
     world_camera_.setFarPlane(200.0f);
 
-    user_interface_.initialize(renderer);
+    construction_controller_ = nu::makeScopedPtr<ConstructionController>(&world_, prefabs_.get());
+
+    user_interface_ =
+        nu::makeScopedPtr<UserInterface>(construction_controller_.get(), world_.resources());
+    if (!user_interface_->initialize(renderer)) {
+      return false;
+    }
 
     return true;
   }
@@ -57,7 +63,7 @@ public:
 
     world_camera_.setAspectRatio(aspect_ratio);
 
-    user_interface_.ui().resize(size);
+    //    user_interface_.ui().resize(size);
   }
 
   void on_mouse_moved(const ca::MouseEvent& event) override {
@@ -163,11 +169,11 @@ public:
       auto result = fl::intersection(world_plane, ray_);
       fl::Vec2 cursor_position{result.position.x, result.position.y};
       world_.set_cursor_position(cursor_position);
-      construction_controller_.set_cursor_position(cursor_position);
+      //      construction_controller_.set_cursor_position(cursor_position);
     }
 
     world_.tick(delta);
-    user_interface_.tick(delta);
+    //    user_interface_.tick(delta);
   }
 
   void onRender(ca::Renderer* renderer) override {
@@ -180,16 +186,17 @@ public:
       world_.render(renderer, camera);
     }
 
-    construction_controller_.render(renderer, camera);
+    //    construction_controller_.render(renderer, camera);
 
     glDisable(GL_DEPTH_TEST);
 
     {
-      PROFILE("render user interface")
-      user_interface_.ui().render(renderer);
+        PROFILE("render user interface")
+        //      user_interface_.ui().render(renderer);
     }
 
-    renderer->state().depth_test(false);
+    renderer->state()
+        .depth_test(false);
   }
 
 #if 0
@@ -245,14 +252,22 @@ public:
 private:
   static bool create_prefabs(Prefabs* prefabs) {
     if (!prefabs->set(EntityType::CommandCenter,
-                      [](hi::ResourceManager* resource_manager, Entity* storage) -> bool {
+                      [](le::ResourceManager* resource_manager, Entity* storage) -> bool {
                         storage->electricity.electricity_delta = 20;
                         storage->building.selection_radius = 1.5f;
-                        storage->render.model =
-                            resource_manager->get<le::Model>("command_center.dae");
-                        if (!storage->render.model) {
-                          return false;
-                        }
+
+                        // auto model = resource_manager->get_model("command_center.dae");
+
+                        //                        auto scene =
+                        //                        resource_manager->get_scene("command_center.dae");
+                        //                        auto model =
+                        //                            le::Model::create_from_scene(*scene,
+                        //                            resource_manager, renderer);
+                        //
+                        //                        storage->render.model = model;
+                        //                        if (!storage->render.model) {
+                        //                          return false;
+                        //                        }
 
                         return true;
                       })) {
@@ -260,7 +275,9 @@ private:
     }
 
     if (!prefabs->set(EntityType::Miner,
-                      [](hi::ResourceManager* resource_manager, Entity* storage) -> bool {
+                      [](le::ResourceManager* resource_manager, Entity* storage) -> bool {
+                        return false;
+#if 0
                         storage->electricity.electricity_delta = -5;
 
                         storage->building.selection_radius = 1.5f;
@@ -269,21 +286,24 @@ private:
                         storage->mining.cycle_duration = 100.0f;
                         storage->mining.mineral_amount_per_cycle = 10;
 
-                        storage->render.model = resource_manager->get<le::Model>("miner.dae");
+                        storage->render.model = resource_manager->get_scene("miner.dae").release();
                         if (!storage->render.model) {
                           return false;
                         }
 
                         return true;
+#endif  // 0
                       })) {
       return false;
     }
 
     if (!prefabs->set(EntityType::Asteroid,
-                      [](hi::ResourceManager* resource_manager, Entity* storage) -> bool {
+                      [](le::ResourceManager* resource_manager, Entity* storage) -> bool {
+                        return false;
+#if 0
                         // storage->render.model = resourceManager->get<le::Model>("asteroid.dae");
                         storage->render.model =
-                            resource_manager->get<le::Model>("command_center.dae");
+                            resource_manager->get_model("command_center.dae").release();
                         if (!storage->render.model) {
                           return false;
                         }
@@ -291,18 +311,22 @@ private:
                         storage->building.selection_radius = 0.5f;
 
                         return true;
+#endif  // 0
                       })) {
       return false;
     }
 
     if (!prefabs->set(EntityType::EnemyFighter,
-                      [](hi::ResourceManager* resource_manager, Entity* storage) -> bool {
-                        storage->render.model = resource_manager->get<le::Model>("enemy.dae");
+                      [](le::ResourceManager* resource_manager, Entity* storage) -> bool {
+                        return false;
+#if 0
+                        storage->render.model = resource_manager->get_model("enemy.dae").release();
                         if (!storage->render.model) {
                           return false;
                         }
 
                         return true;
+#endif  // 0
                       })) {
       return false;
     }
@@ -310,15 +334,14 @@ private:
     return true;
   }
 
-  le::ResourceManager resource_manager_;
-  hi::PhysicalFileResourceLocator physical_file_resource_locator_;
+  nu::ScopedPtr<le::ResourceManager> resource_manager_;
 
-  Prefabs prefabs_{&resource_manager_};
+  nu::ScopedPtr<Prefabs> prefabs_;
   World world_;
 
-  ConstructionController construction_controller_{&world_, &prefabs_};
+  nu::ScopedPtr<ConstructionController> construction_controller_;
 
-  UserInterface user_interface_{&construction_controller_, world_.resources()};
+  nu::ScopedPtr<UserInterface> user_interface_;
 
   F32 field_of_view_movement_ = 0.0f;
 

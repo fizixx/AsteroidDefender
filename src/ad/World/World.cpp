@@ -12,8 +12,8 @@ void World::clear() {
 
 EntityId World::add_entity_from_prefab(Entity* prefab, const fl::Vec2& position) {
   auto new_id = entities_.size();
-  auto result = entities_.emplace_back(*prefab);
-  result.position = position;
+  auto result = entities_.emplaceBack(*prefab);
+  result.element().position = position;
   return EntityId{new_id};
 }
 

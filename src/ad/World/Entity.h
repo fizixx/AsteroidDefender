@@ -1,5 +1,7 @@
 #pragma once
 
+#include <nucleus/Memory/ScopedPtr.h>
+
 #include "floats/Common.h"
 #include "floats/Vec2.h"
 #include "legion/Resources/Model.h"
@@ -65,9 +67,8 @@ struct Entity {
   } mining;
 
   struct Render {
-    le::Model* model = nullptr;
+    le::Model* model;
   } render;
 };
 
-// using EntityList = nu::DynamicArray<Entity>;
-using EntityList = std::vector<Entity>;
+using EntityList = nu::DynamicArray<Entity>;
