@@ -18,7 +18,7 @@ public:
   }
 
   void initialize_prefabs(le::ResourceManager* resource_manager) {
-    prefabs_ = nu::makeScopedPtr<Prefabs>(resource_manager);
+    prefabs_ = nu::make_scoped_ptr<Prefabs>(resource_manager);
   }
 
 private:

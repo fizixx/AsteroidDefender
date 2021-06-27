@@ -284,7 +284,7 @@ protected:
   bool on_initialize() override {
     auto assets_path = nu::getCurrentWorkingDirectory() / "assets";
     LOG(Info) << "Assets path: " << assets_path.getPath();
-    resource_manager().set_locator(nu::makeScopedRefPtr<hi::PhysicalFileLocator>(assets_path));
+    resource_manager().set_locator(nu::make_scoped_ref_ptr<hi::PhysicalFileLocator>(assets_path));
 
     context_->initialize_prefabs(&resource_manager());
     setup_prefabs(&context_->prefabs());
