@@ -1,6 +1,6 @@
 #include <catch2/catch.hpp>
 
-#include "ad/World/Prefabs.h"
+#include "ad/World/prefabs.h"
 
 TEST_CASE("Prefabs") {
   SECTION("basic") {
@@ -8,7 +8,7 @@ TEST_CASE("Prefabs") {
 
     prefabs.set(EntityType::CommandCenter, [](hi::ResourceManager*, Entity* storage) -> bool {
       storage->building.selection_radius = 10.0f;
-      storage->render.model = new le::Model;
+      storage->render.model = new le::RenderModel;
       storage->render.model->root_node().children().emplaceBack(le::ModelNode());
       return true;
     });

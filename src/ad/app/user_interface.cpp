@@ -1,16 +1,16 @@
-#include "ad/App/UserInterface.h"
+#include "ad/App/user_interface.h"
 
 #include <silhouette/image.h>
 
 #include <cstdio>
 
-#include "ad/World/ConstructionController.h"
-#include "ad/World/World.h"
-#include "elastic/Views/ButtonView.h"
-#include "elastic/Views/LabelView.h"
-#include "elastic/Views/LinearSizerView.h"
-#include "nucleus/FilePath.h"
-#include "nucleus/Streams/FileInputStream.h"
+#include "ad/World/construction_controller.h"
+#include "ad/World/world.h"
+#include "elastic/Views/button_view.h"
+#include "elastic/Views/label_view.h"
+#include "elastic/Views/linear_sizer_view.h"
+#include "nucleus/Streams/file_input_stream.h"
+#include "nucleus/file_path.h"
 
 namespace {
 

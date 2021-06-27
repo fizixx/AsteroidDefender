@@ -1,8 +1,8 @@
 #pragma once
 
-#include <legion/Resources/ResourceManager.h>
+#include <legion/Resources/resource_manager.h>
 
-#include "ad/World/Entity.h"
+#include "ad/World/entity.h"
 #include "nucleus/Containers/hash_map.h"
 #include "nucleus/function.h"
 

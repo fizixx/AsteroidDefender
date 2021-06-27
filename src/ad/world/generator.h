@@ -1,12 +1,16 @@
 #pragma once
 
-#include "ad/World/Prefabs.h"
-#include "ad/World/World.h"
-#include "floats/Random.h"
+#include "ad/World/prefabs.h"
+#include "ad/World/world.h"
+#include "floats/random.h"
 
 class Generator {
 public:
-  static auto generate(World* world, Prefabs* prefabs) -> void {
+  explicit Generator(MemSize seed) : seed_{seed} {}
+
+  void generate(World* world, Prefabs* prefabs) const {
+    LOG(Info) << "Seed: " << seed_;
+
     Entity* command_center = prefabs->get(EntityType::CommandCenter);
     Entity* miner = prefabs->get(EntityType::Miner);
     Entity* asteroid = prefabs->get(EntityType::Asteroid);
@@ -37,7 +41,7 @@ public:
 
     create_command_center(fl::Vec2::zero);
 
-#if 0
+#if 1
     create_miner(fl::Vec2{10.0f, 10.0f});
     create_miner(fl::Vec2{5.0f, 10.0f});
     create_miner(fl::Vec2{-5.0f, 5.0f});
@@ -55,4 +59,7 @@ public:
     }
 #endif  // 0
   }
+
+private:
+  MemSize seed_;
 };

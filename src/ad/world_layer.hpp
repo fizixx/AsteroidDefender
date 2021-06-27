@@ -1,17 +1,25 @@
-#include "ad/App/UserInterface.h"
-#include "ad/World/ConstructionController.h"
-#include "ad/World/Entity.h"
-#include "ad/World/Generator.h"
-#include "ad/World/Prefabs.h"
-#include "ad/World/World.h"
-#include "canvas/App.h"
-#include "canvas/OpenGL.h"
-#include "floats/Intersection.h"
-#include "hive/physical_file_locator.h"
-#include "legion/Controllers/TopDownCameraController.h"
-#include "legion/Resources/ResourceManager.h"
-#include "nucleus/FilePath.h"
+#include <canvas/app.h>
+#include <canvas/opengl.h>
+#include <floats/intersection.h>
+#include <hive/physical_file_locator.h>
+#include <legion/Controllers/top_down_camera_controller.h>
+#include <legion/Resources/resource_manager.h>
+#include <nucleus/Win/includes.h>
+#include <nucleus/file_path.h>
+#include <nucleus/optional.h>
 
+#include <legion/engine/engine.hpp>
+#include <utility>
+
+#include "ad/App/user_interface.h"
+#include "ad/World/construction_controller.h"
+#include "ad/World/entity.h"
+#include "ad/World/generator.h"
+#include "ad/World/prefabs.h"
+#include "ad/World/world.h"
+#include "ad/context.hpp"
+
+#if 0
 class AsteroidDefender : public ca::WindowDelegate {
   NU_DELETE_COPY_AND_MOVE(AsteroidDefender);
 
@@ -21,17 +29,6 @@ public:
   ~AsteroidDefender() override = default;
 
   bool onWindowCreated(ca::Window* window) override {
-    if (!WindowDelegate::onWindowCreated(window)) {
-      return false;
-    }
-
-    ca::Renderer* renderer = window->getRenderer();
-
-    auto assets_path = nu::getCurrentWorkingDirectory() / "assets";
-    LOG(Info) << "Assets path: " << assets_path.getPath();
-    auto locator = nu::makeScopedRefPtr<hi::PhysicalFileLocator>(assets_path);
-    resource_manager_ = nu::makeScopedPtr<le::ResourceManager>(std::move(locator));
-
     prefabs_ = nu::makeScopedPtr<Prefabs>(resource_manager_.get());
     if (!create_prefabs(prefabs_.get())) {
       return false;
@@ -250,90 +247,6 @@ public:
 #endif  // 0
 
 private:
-  static bool create_prefabs(Prefabs* prefabs) {
-    if (!prefabs->set(EntityType::CommandCenter,
-                      [](le::ResourceManager* resource_manager, Entity* storage) -> bool {
-                        storage->electricity.electricity_delta = 20;
-                        storage->building.selection_radius = 1.5f;
-
-                        // auto model = resource_manager->get_model("command_center.dae");
-
-                        //                        auto scene =
-                        //                        resource_manager->get_scene("command_center.dae");
-                        //                        auto model =
-                        //                            le::Model::create_from_scene(*scene,
-                        //                            resource_manager, renderer);
-                        //
-                        //                        storage->render.model = model;
-                        //                        if (!storage->render.model) {
-                        //                          return false;
-                        //                        }
-
-                        return true;
-                      })) {
-      return false;
-    }
-
-    if (!prefabs->set(EntityType::Miner,
-                      [](le::ResourceManager* resource_manager, Entity* storage) -> bool {
-                        return false;
-#if 0
-                        storage->electricity.electricity_delta = -5;
-
-                        storage->building.selection_radius = 1.5f;
-
-                        storage->mining.time_since_last_cycle = 0.0f;
-                        storage->mining.cycle_duration = 100.0f;
-                        storage->mining.mineral_amount_per_cycle = 10;
-
-                        storage->render.model = resource_manager->get_scene("miner.dae").release();
-                        if (!storage->render.model) {
-                          return false;
-                        }
-
-                        return true;
-#endif  // 0
-                      })) {
-      return false;
-    }
-
-    if (!prefabs->set(EntityType::Asteroid,
-                      [](le::ResourceManager* resource_manager, Entity* storage) -> bool {
-                        return false;
-#if 0
-                        // storage->render.model = resourceManager->get<le::Model>("asteroid.dae");
-                        storage->render.model =
-                            resource_manager->get_model("command_center.dae").release();
-                        if (!storage->render.model) {
-                          return false;
-                        }
-
-                        storage->building.selection_radius = 0.5f;
-
-                        return true;
-#endif  // 0
-                      })) {
-      return false;
-    }
-
-    if (!prefabs->set(EntityType::EnemyFighter,
-                      [](le::ResourceManager* resource_manager, Entity* storage) -> bool {
-                        return false;
-#if 0
-                        storage->render.model = resource_manager->get_model("enemy.dae").release();
-                        if (!storage->render.model) {
-                          return false;
-                        }
-
-                        return true;
-#endif  // 0
-                      })) {
-      return false;
-    }
-
-    return true;
-  }
-
   nu::ScopedPtr<le::ResourceManager> resource_manager_;
 
   nu::ScopedPtr<Prefabs> prefabs_;
@@ -359,7 +272,174 @@ private:
   // Position of the cursor on the screen in range ([0..m_size.width], [0..m_size.height]}.
   fl::Pos current_mouse_position_;
 };
+#endif  // 0
 
-#if !defined(AS_TESTS)
-CANVAS_APP(AsteroidDefender)
-#endif
+namespace ad {
+
+class WorldLayer : public le::EngineLayer {
+public:
+  explicit WorldLayer(nu::ScopedRefPtr<Context> context) : context_{std::move(context)} {}
+
+protected:
+  bool on_initialize() override {
+    auto assets_path = nu::getCurrentWorkingDirectory() / "assets";
+    LOG(Info) << "Assets path: " << assets_path.getPath();
+    resource_manager().set_locator(nu::makeScopedRefPtr<hi::PhysicalFileLocator>(assets_path));
+
+    context_->initialize_prefabs(&resource_manager());
+    setup_prefabs(&context_->prefabs());
+
+    Generator{5244}.generate(&context_->world(), &context_->prefabs());
+
+    world_camera_.moveTo({0.0f, 0.0f, 5.0f});
+    world_camera_.setNearPlane(0.1f);
+    world_camera_.setFarPlane(200.0f);
+
+    return true;
+  }
+
+  void on_resize(const fl::Size& size) override {
+    EngineLayer::on_resize(size);
+
+    world_camera_controller_.set_screen_size(size);
+
+    auto aspect_ratio = le::Camera::aspectRatioFromScreenSize(size);
+    world_camera_.setAspectRatio(aspect_ratio);
+  }
+
+  void on_mouse_moved(const ca::MouseEvent& evt) override {
+    current_mouse_position_ = evt.pos;
+    world_camera_controller_.on_mouse_moved(evt);
+  }
+
+  bool on_mouse_pressed(const ca::MouseEvent& evt) override {
+    return world_camera_controller_.on_mouse_pressed(evt);
+  }
+
+  void on_mouse_released(const ca::MouseEvent& evt) override {
+    world_camera_controller_.on_mouse_released(evt);
+  }
+
+  void on_mouse_wheel(const ca::MouseWheelEvent& evt) override {
+    world_camera_controller_.on_mouse_wheel(evt);
+  }
+
+  void on_key_pressed(const ca::KeyEvent& evt) override {
+    world_camera_controller_.on_key_pressed(evt);
+  }
+
+  void on_key_released(const ca::KeyEvent& evt) override {
+    world_camera_controller_.on_key_released(evt);
+  }
+
+  void update(F32 delta) override {
+    world_camera_controller_.tick(delta);
+
+    {
+      fl::Frustum camera_bounds{-10.0f, 10.0f, -10.0f, 10.0f, 0.1f, 10.0f};
+      auto m = fl::frustumMatrix(camera_bounds);
+      auto pos = m * fl::Vec4{0.0f, 0.0f, 0.0f, 1.0f};
+
+      LOG(Info) << "pos: " << pos;
+
+      // ray_ =
+      // world_camera_.createRayForMouse(le::Camera::convertScreenPositionToClipSpace(current_mouse_position_,
+      // size_in_pixels()));
+      ray_ = fl::Ray{fl::Vec3{0.0f, 0.0f, 1.0f}, -fl::Vec3::up};
+
+      fl::Plane world_plane{fl::Vec3::up, 0.0f};
+      auto result = fl::intersection(world_plane, ray_);
+      DCHECK(result.didIntersect);
+      fl::Vec2 cursor_position{result.position.x, result.position.y};
+      context_->world().set_cursor_position(cursor_position);
+      //      construction_controller_.set_cursor_position(cursor_position);
+    }
+
+    context_->world().tick(delta);
+  }
+
+  void on_render() override {
+    context_->world().render(&renderer(), world_camera_controller_.camera());
+  }
+
+private:
+  static bool setup_prefabs(Prefabs* prefabs) {
+    if (!prefabs->set(EntityType::CommandCenter,
+                      [](le::ResourceManager* resource_manager, Entity* storage) -> bool {
+                        storage->electricity.electricity_delta = 20;
+                        storage->building.selection_radius = 1.5f;
+
+                        auto* model = resource_manager->get_render_model("command_center.dae");
+
+                        storage->render.model = model;
+                        if (!storage->render.model) {
+                          return false;
+                        }
+
+                        return true;
+                      })) {
+      return false;
+    }
+
+    if (!prefabs->set(EntityType::Miner,
+                      [](le::ResourceManager* resource_manager, Entity* storage) -> bool {
+                        storage->electricity.electricity_delta = -5;
+
+                        storage->building.selection_radius = 1.5f;
+
+                        storage->mining.time_since_last_cycle = 0.0f;
+                        storage->mining.cycle_duration = 100.0f;
+                        storage->mining.mineral_amount_per_cycle = 10;
+
+                        storage->render.model = resource_manager->get_render_model("miner.dae");
+                        if (!storage->render.model) {
+                          return false;
+                        }
+
+                        return true;
+                      })) {
+      return false;
+    }
+
+    if (!prefabs->set(EntityType::Asteroid,
+                      [](le::ResourceManager* resource_manager, Entity* storage) -> bool {
+                        storage->render.model =
+                            resource_manager->get_render_model("command_center.dae");
+                        if (!storage->render.model) {
+                          return false;
+                        }
+
+                        storage->building.selection_radius = 0.5f;
+
+                        return true;
+                      })) {
+      return false;
+    }
+
+    if (!prefabs->set(EntityType::EnemyFighter,
+                      [](le::ResourceManager* resource_manager, Entity* storage) -> bool {
+                        storage->render.model = resource_manager->get_render_model("enemy.dae");
+                        if (!storage->render.model) {
+                          return false;
+                        }
+
+                        return true;
+                      })) {
+      return false;
+    }
+
+    return true;
+  }
+
+  nu::ScopedRefPtr<Context> context_;
+
+  le::Camera world_camera_{fl::degrees(45.0f), {0.0f, 0.0f, 1.0f}};
+  le::TopDownCameraController world_camera_controller_{
+      &world_camera_, {fl::Vec3::forward, 0.0f}, 25.0f};
+
+  fl::Pos current_mouse_position_ = {0, 0};
+
+  fl::Ray ray_{{0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}};
+};
+
+}  // namespace ad

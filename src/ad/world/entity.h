@@ -1,10 +1,10 @@
 #pragma once
 
-#include <nucleus/Memory/ScopedPtr.h>
+#include <nucleus/Memory/scoped_ptr.h>
 
-#include "floats/Common.h"
-#include "floats/Vec2.h"
-#include "legion/Resources/Model.h"
+#include "floats/common.h"
+#include "floats/vec2.h"
+#include "legion/Resources/render_model.h"
 #include "nucleus/hash.h"
 
 const MemSize k_invalid_entity_id = std::numeric_limits<MemSize>::max();
@@ -67,7 +67,7 @@ struct Entity {
   } mining;
 
   struct Render {
-    le::Model* model;
+    le::RenderModel* model = nullptr;
   } render;
 };
 

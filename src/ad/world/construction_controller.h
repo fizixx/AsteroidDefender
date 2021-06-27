@@ -1,11 +1,11 @@
 #pragma once
 
-#include "ad/World/Entity.h"
-#include "ad/World/Prefabs.h"
-#include "ad/World/World.h"
-#include "floats/Transform.h"
-#include "legion/Rendering/Rendering.h"
-#include "legion/World/Camera.h"
+#include "ad/World/entity.h"
+#include "ad/World/prefabs.h"
+#include "ad/World/world.h"
+#include "floats/transform.h"
+#include "legion/Rendering/rendering.h"
+#include "legion/World/camera.h"
 
 class ConstructionController {
 public:

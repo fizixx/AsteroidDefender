@@ -1,7 +1,7 @@
 #ifndef AD_WORLD_SYSTEMS_MOVEMENT_SYSTEM_H_
 #define AD_WORLD_SYSTEMS_MOVEMENT_SYSTEM_H_
 
-#include "ad/World/Entity.h"
+#include "ad/World/entity.h"
 
 struct MovementSystem {
   auto tick(EntityList& entities, F32 delta) -> void {

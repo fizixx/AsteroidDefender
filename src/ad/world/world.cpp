@@ -1,10 +1,10 @@
-#include "ad/World/World.h"
+#include "ad/World/world.h"
 
-#include "ad/World/Entity.h"
-#include "canvas/Utils/ImmediateShapes.h"
-#include "floats/Transform.h"
-#include "legion/Rendering/Rendering.h"
-#include "nucleus/Profiling.h"
+#include "ad/World/entity.h"
+#include "canvas/Utils/immediate_shapes.h"
+#include "floats/transform.h"
+#include "legion/Rendering/rendering.h"
+#include "nucleus/profiling.h"
 
 void World::clear() {
   entities_.clear();
@@ -56,6 +56,8 @@ void World::render(ca::Renderer* renderer, le::Camera* camera) {
   auto projection_and_view = projection * view;
 
   // Render the entities.
+
+  renderer->state().depth_test(true);
 
   ca::ImmediateRenderer immediate{renderer};
 

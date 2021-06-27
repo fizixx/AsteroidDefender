@@ -1,11 +1,11 @@
 #ifndef AD_APP_USER_INTERFACE_H_
 #define AD_APP_USER_INTERFACE_H_
 
-#include "ad/World/ConstructionController.h"
-#include "ad/World/Entity.h"
-#include "elastic/Context.h"
-#include "elastic/Renderer/Font.h"
-#include "nucleus/Macros.h"
+#include "ad/World/construction_controller.h"
+#include "ad/World/entity.h"
+#include "elastic/Renderer/font.h"
+#include "elastic/context.h"
+#include "nucleus/macros.h"
 
 namespace el {
 class LabelView;

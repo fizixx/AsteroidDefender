@@ -1,9 +1,10 @@
 #ifndef AD_WORLD_SYSTEMS_RESOURCE_SYSTEM_H_
 #define AD_WORLD_SYSTEMS_RESOURCE_SYSTEM_H_
 
-#include <ad/World/Entity.h>
-#include "ad/World/Entity.h"
-#include "ad/World/Resources.h"
+#include <ad/World/entity.h>
+
+#include "ad/World/entity.h"
+#include "ad/World/resources.h"
 
 struct ResourceSystem {
   Resources* resources;
