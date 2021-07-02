@@ -44,7 +44,7 @@ public:
     camera->updateProjectionMatrix(&projection);
     camera->updateViewMatrix(&view);
 
-    auto final = projection * view * fl::translationMatrix(fl::Vec3{cursor_position_, 0.0f});
+    auto final = projection * view * fl::translation_matrix(fl::Vec3{cursor_position_, 0.0f});
 
     le::renderModel(renderer, *prefab_->render.model, final);
   }

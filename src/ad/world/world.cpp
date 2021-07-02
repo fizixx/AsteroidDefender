@@ -1,9 +1,8 @@
-#include "ad/World/world.h"
+#include "ad/world/world.h"
 
-#include "ad/World/entity.h"
-#include "canvas/Utils/immediate_shapes.h"
+#include "canvas/utils/immediate_shapes.h"
 #include "floats/transform.h"
-#include "legion/Rendering/rendering.h"
+#include "legion/rendering/rendering.h"
 #include "nucleus/profiling.h"
 
 void World::clear() {
@@ -64,18 +63,18 @@ void World::render(ca::Renderer* renderer, le::Camera* camera) {
   for (auto& entity : entities_) {
     PROFILE("item")
 
-    auto translation = fl::translationMatrix(fl::Vec3{entity.position, 0.0f});
-    auto rotation = fl::rotationMatrix(fl::Vec3{0.0f, 0.0f, 1.0f}, entity.movement.direction);
+    auto translation = fl::translation_matrix(fl::Vec3{entity.position, 0.0f});
+    auto rotation = fl::rotation_matrix(fl::Vec3{0.0f, 0.0f, 1.0f}, entity.movement.direction);
 
     auto mvp =
-        projection_and_view * fl::createModelMatrix(translation, rotation, fl::Mat4::identity);
+        projection_and_view * fl::create_model_matrix(translation, rotation, fl::Mat4::identity);
 
     // Draw the entity circle.
 
     // TODO: set projection_and_view
     if (entity.building.selection_radius > 0.0f) {
-      ca::drawCircle(&immediate, fl::Vec3{entity.position, 0.0f}, entity.building.selection_radius,
-                     16, ca::Color::red);
+      ca::draw_circle(&immediate, fl::Vec3{entity.position, 0.0f}, entity.building.selection_radius,
+                      16, ca::Color::red);
     }
 
     // Draw entity model.

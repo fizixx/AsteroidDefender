@@ -337,7 +337,7 @@ protected:
 
     {
       fl::Frustum camera_bounds{-10.0f, 10.0f, -10.0f, 10.0f, 0.1f, 10.0f};
-      auto m = fl::frustumMatrix(camera_bounds);
+      auto m = fl::frustum_matrix(camera_bounds);
       auto pos = m * fl::Vec4{0.0f, 0.0f, 0.0f, 1.0f};
 
       LOG(Info) << "pos: " << pos;

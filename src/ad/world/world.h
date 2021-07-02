@@ -1,12 +1,12 @@
 #pragma once
 
-#include "ad/World/Systems/movement_system.h"
-#include "ad/World/Systems/resource_system.h"
-#include "ad/World/entity.h"
-#include "ad/World/resources.h"
-#include "legion/World/camera.h"
-#include "nucleus/Containers/dynamic_array.h"
-#include "nucleus/macros.h"
+#include <ad/world/Systems/movement_system.h>
+#include <ad/world/Systems/resource_system.h>
+#include <ad/world/entity.h>
+#include <ad/world/resources.h>
+#include <legion/world/camera.h>
+#include <nucleus/containers/dynamic_array.h>
+#include <nucleus/macros.h>
 
 namespace ca {
 class Renderer;
