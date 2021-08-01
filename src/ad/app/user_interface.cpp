@@ -89,7 +89,7 @@ auto UserInterface::tick(F32 delta) -> void {
 }
 
 auto UserInterface::create_ui(el::Context* context, el::Font* NU_UNUSED(font)) -> bool {
-  el::ContextView* root_view = context->getRootView();
+  el::ContextView* root_view = context->root_view();
 
   auto resources_container = new el::LinearSizerView{&ui_};
   root_view->addChild(resources_container);

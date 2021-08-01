@@ -1,23 +1,23 @@
 #include <canvas/app.h>
 #include <canvas/opengl.h>
 #include <floats/intersection.h>
-#include <hive/physical_file_locator.h>
-#include <legion/Controllers/top_down_camera_controller.h>
-#include <legion/Resources/resource_manager.h>
-#include <nucleus/Win/includes.h>
+#include <hive/locator/physical_file_locator.h>
+#include <legion/controllers/top_down_camera_controller.h>
+#include <legion/resources/resource_manager.h>
 #include <nucleus/file_path.h>
 #include <nucleus/optional.h>
+#include <nucleus/win/includes.h>
 
 #include <legion/engine/engine.hpp>
 #include <utility>
 
-#include "ad/App/user_interface.h"
-#include "ad/World/construction_controller.h"
-#include "ad/World/entity.h"
-#include "ad/World/generator.h"
-#include "ad/World/prefabs.h"
-#include "ad/World/world.h"
+#include "ad/app/user_interface.h"
 #include "ad/context.hpp"
+#include "ad/world/construction_controller.h"
+#include "ad/world/entity.h"
+#include "ad/world/generator.h"
+#include "ad/world/prefabs.h"
+#include "ad/world/world.h"
 
 #if 0
 class AsteroidDefender : public ca::WindowDelegate {
@@ -403,8 +403,7 @@ private:
 
     if (!prefabs->set(EntityType::Asteroid,
                       [](le::ResourceManager* resource_manager, Entity* storage) -> bool {
-                        storage->render.model =
-                            resource_manager->get_render_model("command_center.dae");
+                        storage->render.model = resource_manager->get_render_model("asteroid.dae");
                         if (!storage->render.model) {
                           return false;
                         }

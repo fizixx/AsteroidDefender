@@ -28,7 +28,7 @@ protected:
     main_button_ = new el::ButtonView{&context(), "Main Button",
                                       [](auto* source) { LOG(Info) << "Button clicked"; }};
     main_button_->setFont(main_font_);
-    context().getRootView()->addChild(main_button_);
+    context().root_view()->addChild(main_button_);
     return true;
   }
 

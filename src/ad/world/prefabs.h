@@ -1,10 +1,10 @@
 #pragma once
 
-#include <legion/Resources/resource_manager.h>
+#include <legion/resources/resource_manager.h>
+#include <nucleus/containers/hash_map.h>
+#include <nucleus/function.h>
 
-#include "ad/World/entity.h"
-#include "nucleus/Containers/hash_map.h"
-#include "nucleus/function.h"
+#include "ad/world/entity.h"
 
 class Prefabs {
 public:
