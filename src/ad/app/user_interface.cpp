@@ -56,8 +56,8 @@ auto UserInterface::initialize(ca::Renderer* renderer) -> bool {
     }
 
     auto texture_id =
-        renderer->createTexture(ca::TextureFormat::RGBA, background.size(),
-                                background.data().data(), background.data().size(), false);
+        renderer->create_texture(ca::TextureFormat::RGBA, background.size(),
+                                 background.data().data(), background.data().size(), false);
     if (!texture_id) {
       return false;
     }
