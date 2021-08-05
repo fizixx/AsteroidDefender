@@ -1,5 +1,6 @@
 #include "ad/App/user_interface.h"
 
+#include <silhouette/codec/image/png.h>
 #include <silhouette/image.h>
 
 #include <cstdio>
@@ -50,19 +51,19 @@ auto UserInterface::initialize(ca::Renderer* renderer) -> bool {
 
   {
     nu::FileInputStream stream{nu::FilePath{R"(C:\Code\elastic\assets\button_bg.png)"}};
-    si::Image background;
-    if (!background.load_from_png(&stream)) {
+    auto maybe_background = si::load_image_from_png(&stream);
+    if (!maybe_background.has_value()) {
       return false;
     }
 
-    auto texture_id =
-        renderer->create_texture(ca::TextureFormat::RGBA, background.size(),
-                                 background.data().data(), background.data().size(), false);
+    auto texture_id = renderer->create_texture(ca::TextureFormat::RGBA, maybe_background->size(),
+                                               maybe_background->data().data(),
+                                               maybe_background->data().size(), false);
     if (!texture_id) {
       return false;
     }
 
-    button_background_ = el::Image{texture_id, background.size()};
+    button_background_ = el::Image{texture_id, maybe_background->size()};
   }
 
   return create_ui(&ui_, &font_);
