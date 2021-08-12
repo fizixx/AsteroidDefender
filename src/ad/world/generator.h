@@ -1,7 +1,7 @@
 #pragma once
 
-#include "ad/World/prefabs.h"
-#include "ad/World/world.h"
+#include "ad/world/prefabs.h"
+#include "ad/world/world.h"
 #include "floats/random.h"
 
 class Generator {
