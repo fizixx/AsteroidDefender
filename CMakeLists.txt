@@ -6,6 +6,7 @@ add_subdirectory(../legion legion)
 
 set(SOURCE_FILES
     src/ad/app/user_interface.cpp
+    src/ad/world/generator.cpp
     src/ad/world/world.cpp
     )
 

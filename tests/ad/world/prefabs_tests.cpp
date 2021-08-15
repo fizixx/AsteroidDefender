@@ -1,12 +1,12 @@
 #include <catch2/catch.hpp>
 
-#include "ad/World/prefabs.h"
+#include "ad/world/prefabs.h"
 
 TEST_CASE("Prefabs") {
   SECTION("basic") {
     Prefabs prefabs{nullptr};
 
-    prefabs.set(EntityType::CommandCenter, [](hi::ResourceManager*, Entity* storage) -> bool {
+    prefabs.set(EntityType::CommandCenter, [](le::ResourceManager*, Entity* storage) -> bool {
       storage->building.selection_radius = 10.0f;
       storage->render.model = new le::RenderModel;
       storage->render.model->root_node().children().emplaceBack(le::ModelNode());
