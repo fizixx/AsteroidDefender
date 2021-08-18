@@ -5,17 +5,17 @@
 #include <legion/controllers/top_down_camera_controller.h>
 #include <legion/resources/resource_manager.h>
 #include <nucleus/file_path.h>
-#include <nucleus/optional.h>
 #include <nucleus/win/includes.h>
 
 #include <legion/engine/engine.hpp>
+#include <nucleus/optional.hpp>
 #include <utility>
 
 #include "ad/app/user_interface.h"
 #include "ad/context.hpp"
 #include "ad/world/construction_controller.h"
 #include "ad/world/entity.h"
-#include "ad/world/generator.h"
+#include "ad/world/generator.hpp"
 #include "ad/world/prefabs.h"
 #include "ad/world/world.h"
 
@@ -289,7 +289,9 @@ protected:
     context_->initialize_prefabs(&resource_manager());
     setup_prefabs(&context_->prefabs());
 
-    Generator{5244}.generate(&context_->world(), &context_->prefabs());
+    if (!populate_world(&context_->world(), &context_->prefabs())) {
+      return false;
+    }
 
     world_camera_.moveTo({0.0f, 0.0f, 5.0f});
     world_camera_.setNearPlane(0.1f);
@@ -340,7 +342,7 @@ protected:
       auto m = fl::frustum_matrix(camera_bounds);
       auto pos = m * fl::Vec4{0.0f, 0.0f, 0.0f, 1.0f};
 
-      LOG(Info) << "pos: " << pos;
+      // LOG(Info) << "pos: " << pos;
 
       // ray_ =
       // world_camera_.createRayForMouse(le::Camera::convertScreenPositionToClipSpace(current_mouse_position_,
@@ -403,7 +405,7 @@ private:
 
     if (!prefabs->set(EntityType::Asteroid,
                       [](le::ResourceManager* resource_manager, Entity* storage) -> bool {
-                        storage->render.model = resource_manager->get_render_model("asteroid.dae");
+                        storage->render.model = resource_manager->get_render_model("asteroid.obj");
                         if (!storage->render.model) {
                           return false;
                         }
