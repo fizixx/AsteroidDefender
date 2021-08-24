@@ -371,7 +371,7 @@ private:
                         storage->electricity.electricity_delta = 20;
                         storage->building.selection_radius = 1.5f;
 
-                        auto* model = resource_manager->get_render_model("command_center.dae");
+                        auto* model = resource_manager->get_render_model("command_center.obj");
 
                         storage->render.model = model;
                         if (!storage->render.model) {
@@ -393,7 +393,7 @@ private:
                         storage->mining.cycle_duration = 100.0f;
                         storage->mining.mineral_amount_per_cycle = 10;
 
-                        storage->render.model = resource_manager->get_render_model("miner.dae");
+                        storage->render.model = resource_manager->get_render_model("miner.obj");
                         if (!storage->render.model) {
                           return false;
                         }
@@ -419,7 +419,7 @@ private:
 
     if (!prefabs->set(EntityType::EnemyFighter,
                       [](le::ResourceManager* resource_manager, Entity* storage) -> bool {
-                        storage->render.model = resource_manager->get_render_model("enemy.dae");
+                        storage->render.model = resource_manager->get_render_model("enemy.obj");
                         if (!storage->render.model) {
                           return false;
                         }
