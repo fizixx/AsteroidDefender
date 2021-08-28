@@ -1,11 +1,11 @@
 #pragma once
 
-#include "ad/World/entity.h"
-#include "ad/World/prefabs.h"
-#include "ad/World/world.h"
+#include "ad/world/entity.h"
+#include "ad/world/prefabs.h"
+#include "ad/world/world.h"
 #include "floats/transform.h"
-#include "legion/Rendering/rendering.h"
-#include "legion/World/camera.h"
+#include "legion/rendering/rendering.h"
+#include "legion/world/camera.h"
 
 class ConstructionController {
 public:
@@ -20,7 +20,11 @@ public:
     return prefab_ != nullptr;
   }
 
-  auto build() -> void {
+  NU_NO_DISCARD Entity* prefab() const {
+    return prefab_;
+  }
+
+  void build() {
     if (!prefab_) {
       return;
     }
@@ -30,23 +34,12 @@ public:
     prefab_ = nullptr;
   }
 
-  auto set_cursor_position(const fl::Vec2& cursor_position) -> void {
-    cursor_position_ = cursor_position;
+  const fl::Vec2& cursor_position() const {
+    return cursor_position_;
   }
 
-  auto render(ca::Renderer* renderer, le::Camera* camera) -> void {
-    if (!prefab_) {
-      return;
-    }
-
-    fl::Mat4 projection{fl::Mat4::identity}, view{fl::Mat4::identity};
-
-    camera->updateProjectionMatrix(&projection);
-    camera->updateViewMatrix(&view);
-
-    auto final = projection * view * fl::translation_matrix(fl::Vec3{cursor_position_, 0.0f});
-
-    le::renderModel(renderer, *prefab_->render.model, final);
+  void set_cursor_position(const fl::Vec2& cursor_position) {
+    cursor_position_ = cursor_position;
   }
 
 private:

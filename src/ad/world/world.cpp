@@ -1,23 +1,49 @@
 #include "ad/world/world.h"
 
 #include "canvas/utils/immediate_shapes.h"
+#include "construction_controller.h"
 #include "floats/transform.h"
 #include "legion/rendering/rendering.h"
+#include "legion/resources/resource_manager.h"
 #include "nucleus/profiling.h"
+
+World::World() = default;
+
+bool World::initialize(le::ResourceManager* resource_manager) {
+  link_model_ = resource_manager->get_render_model("link.obj");
+  if (!link_model_) {
+    return false;
+  }
+
+  return true;
+}
 
 void World::clear() {
   entities_.clear();
 }
 
 EntityId World::add_entity_from_prefab(Entity* prefab, const fl::Vec2& position) {
-  auto new_id = entities_.size();
   auto result = entities_.emplaceBack(*prefab);
-  result.element().position = position;
-  return EntityId{new_id};
+
+  auto& entity = result.element();
+  auto entity_id = EntityId{result.index()};
+
+  if (entity.type == EntityType::CommandCenter) {
+    command_center_id_ = entity_id;
+  }
+
+  entity.position = position;
+  if (entity.type != EntityType::CommandCenter) {
+    entity.building.linked_to_id = find_closest_to(entity_id);
+  }
+
+  return entity_id;
 }
 
 void World::set_cursor_position(const fl::Vec2& position) {
   cursor_position_ = position;
+
+  update_selected_entity();
 }
 
 EntityId World::get_entity_under_cursor() const {
@@ -40,12 +66,53 @@ EntityId World::get_entity_under_cursor() const {
   return EntityId{};
 }
 
+EntityId World::find_closest_to(EntityId id) const {
+  DCHECK(id.is_valid());
+  const auto& from = entities_[id.id];
+
+  EntityId closest;
+  auto closest_distance = std::numeric_limits<F32>::max();
+  for (unsigned i = 0; i < entities_.size(); ++i) {
+    if (i == id.id) {
+      continue;
+    }
+
+    const auto& e = entities_[i];
+
+    F32 distance = fl::distance(from.position, e.position);
+    if (distance < closest_distance) {
+      closest_distance = distance;
+      closest = EntityId{i};
+    }
+  }
+
+  return closest;
+}
+
+EntityId World::find_closest_to(const fl::Vec2& position) const {
+  EntityId closest;
+  auto closest_distance = std::numeric_limits<F32>::max();
+
+  for (unsigned i = 0; i < entities_.size(); ++i) {
+    const auto& e = entities_[i];
+
+    F32 distance = fl::distance(position, e.position);
+    if (distance < closest_distance) {
+      closest_distance = distance;
+      closest = EntityId{i};
+    }
+  }
+
+  return closest;
+}
+
 void World::tick(F32 delta) {
   resource_system_.tick(entities_, delta);
   movement_system_.tick(entities_, delta);
 }
 
-void World::render(ca::Renderer* renderer, le::Camera* camera) {
+void World::render(ca::Renderer* renderer, le::Camera* camera,
+                   ConstructionController* construction_controller) {
   fl::Mat4 projection = fl::Mat4::identity;
   camera->updateProjectionMatrix(&projection);
 
@@ -60,8 +127,10 @@ void World::render(ca::Renderer* renderer, le::Camera* camera) {
 
   ca::ImmediateRenderer immediate{renderer};
 
-  for (auto& entity : entities_) {
+  for (unsigned i = 0; i < entities_.size(); ++i) {
     PROFILE("item")
+
+    const auto& entity = entities_[i];
 
     auto translation = fl::translation_matrix(fl::Vec3{entity.position, 0.0f});
     auto rotation = fl::rotation_matrix(fl::Vec3{0.0f, 0.0f, 1.0f}, entity.movement.direction);
@@ -73,12 +142,72 @@ void World::render(ca::Renderer* renderer, le::Camera* camera) {
 
     // TODO: set projection_and_view
     if (entity.building.selection_radius > 0.0f) {
-      ca::draw_circle(&immediate, fl::Vec3{entity.position, 0.0f}, entity.building.selection_radius,
-                      16, ca::Color::red);
+      auto color = ca::Color::red;
+      if (EntityId{i} == selected_entity_id_) {
+        color = ca::Color::green;
+      }
+      ca::draw_circle(&immediate, mvp, fl::Vec3::zero, entity.building.selection_radius,
+                      static_cast<I32>(entity.building.selection_radius / 0.1f), color);
     }
 
     // Draw entity model.
-
     le::renderModel(renderer, *entity.render.model, mvp);
+
+    // Draw the entity's link.
+    if (entity.building.linked_to_id.is_valid()) {
+      auto& linked_to = entities_[entity.building.linked_to_id.id];
+
+      render_link(renderer, projection_and_view, entity.position, linked_to.position);
+    }
   }
+
+  // Render the construction prefab:
+  if (construction_controller->is_building()) {
+    Entity* prefab = construction_controller->prefab();
+    DCHECK(prefab);
+
+    auto model = fl::translation_matrix(fl::Vec3{cursor_position_, 0.0f});
+    auto mvp = projection_and_view * model;
+
+    le::renderModel(renderer, *prefab->render.model, mvp);
+
+    // Render a link to the closest entity.
+    auto closest_id = find_closest_to(cursor_position_);
+    if (closest_id.is_valid()) {
+      const auto& closest = entities_[closest_id.id];
+      render_link(renderer, projection_and_view, cursor_position_, closest.position);
+    }
+  }
+
+  immediate.submit_to_renderer();
+}
+void World::update_selected_entity() {
+  for (unsigned i = 0; i < entities_.size(); ++i) {
+    const auto& entity = entities_[i];
+
+    if (entity.building.selection_radius <= 0.0f) {
+      continue;
+    }
+
+    auto distance_to_cursor = fl::distance(entity.position, cursor_position_);
+    if (distance_to_cursor < entity.building.selection_radius) {
+      selected_entity_id_ = EntityId{i};
+      return;
+    }
+  }
+
+  selected_entity_id_ = EntityId{};
+}
+
+void World::render_link(ca::Renderer* renderer, const fl::Mat4& projection_and_view,
+                        const fl::Vec2& from, const fl::Vec2& to) const {
+  auto distance_to_linked = fl::distance(from, to);
+  auto angle = fl::arcTangent2(to.x - from.x, to.y - from.y);
+
+  fl::Mat4 model = fl::Mat4::identity;
+  model = model * fl::translation_matrix({from, 0.0f});
+  model = model * fl::rotation_matrix(fl::Vec3::forward, fl::Angle::fromRadians(angle));
+  model = model * fl::scale_matrix({1.0f, distance_to_linked, 1.0f});
+
+  le::renderModel(renderer, *link_model_, projection_and_view * model);
 }

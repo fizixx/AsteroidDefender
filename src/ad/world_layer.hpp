@@ -282,16 +282,32 @@ public:
 
 protected:
   bool on_initialize() override {
+    // Set up resource manager.
     auto assets_path = nu::getCurrentWorkingDirectory() / "assets";
     LOG(Info) << "Assets path: " << assets_path.getPath();
     resource_manager().set_locator(nu::make_scoped_ref_ptr<hi::PhysicalFileLocator>(assets_path));
 
-    context_->initialize_prefabs(&resource_manager());
+    // Set up the prefabs.
+
     setup_prefabs(&context_->prefabs());
+
+    // Load needed assets.
+
+    context_->world().initialize(&resource_manager());
+
+    cursor_model_ = resource_manager().get_render_model("cursor.obj");
+    if (!cursor_model_) {
+      LOG(Error) << "Could not load cursor model.";
+      return false;
+    }
+
+    // Populate the world.
 
     if (!populate_world(&context_->world(), &context_->prefabs())) {
       return false;
     }
+
+    // Set state of entities.
 
     world_camera_.moveTo({0.0f, 0.0f, 5.0f});
     world_camera_.setNearPlane(0.1f);
@@ -319,6 +335,12 @@ protected:
   }
 
   void on_mouse_released(const ca::MouseEvent& evt) override {
+    if (evt.button == ca::MouseEvent::Button::Left &&
+        context_->construction_controller().is_building()) {
+      context_->construction_controller().build();
+      return;
+    }
+
     world_camera_controller_.on_mouse_released(evt);
   }
 
@@ -338,30 +360,36 @@ protected:
     world_camera_controller_.tick(delta);
 
     {
-      fl::Frustum camera_bounds{-10.0f, 10.0f, -10.0f, 10.0f, 0.1f, 10.0f};
-      auto m = fl::frustum_matrix(camera_bounds);
-      auto pos = m * fl::Vec4{0.0f, 0.0f, 0.0f, 1.0f};
+      fl::Vec2 mouse_position_in_clip_space =
+          le::Camera::convertScreenPositionToClipSpace(current_mouse_position_, size_in_pixels());
+      auto ray = world_camera_.createRayForMouse(mouse_position_in_clip_space);
 
-      // LOG(Info) << "pos: " << pos;
+      fl::Plane world_plane{{0.0f, 0.0f, 1.0f}, 0.0f};
+      auto result = fl::intersection(world_plane, ray);
 
-      // ray_ =
-      // world_camera_.createRayForMouse(le::Camera::convertScreenPositionToClipSpace(current_mouse_position_,
-      // size_in_pixels()));
-      ray_ = fl::Ray{fl::Vec3{0.0f, 0.0f, 1.0f}, -fl::Vec3::up};
+      // DCHECK(result.didIntersect);
+      mouse_position_in_world_ = result.position;
 
-      fl::Plane world_plane{fl::Vec3::up, 0.0f};
-      auto result = fl::intersection(world_plane, ray_);
-      DCHECK(result.didIntersect);
-      fl::Vec2 cursor_position{result.position.x, result.position.y};
-      context_->world().set_cursor_position(cursor_position);
-      //      construction_controller_.set_cursor_position(cursor_position);
+      context_->world().set_cursor_position(mouse_position_in_world_.xy());
+      context_->construction_controller().set_cursor_position(mouse_position_in_world_.xy());
     }
 
     context_->world().tick(delta);
   }
 
   void on_render() override {
-    context_->world().render(&renderer(), world_camera_controller_.camera());
+    context_->world().render(&renderer(), &world_camera_, &context_->construction_controller());
+
+    auto projection = fl::Mat4::identity;
+    auto view = fl::Mat4::identity;
+
+    world_camera_.updateProjectionMatrix(&projection);
+    world_camera_.updateViewMatrix(&view);
+    auto model = fl::translation_matrix(mouse_position_in_world_);
+
+    auto mvp = projection * view * model;
+
+    le::renderModel(&renderer(), *cursor_model_, mvp);
   }
 
 private:
@@ -369,7 +397,7 @@ private:
     if (!prefabs->set(EntityType::CommandCenter,
                       [](le::ResourceManager* resource_manager, Entity* storage) -> bool {
                         storage->electricity.electricity_delta = 20;
-                        storage->building.selection_radius = 1.5f;
+                        storage->building.selection_radius = 2.5f;
 
                         auto* model = resource_manager->get_render_model("command_center.obj");
 
@@ -410,7 +438,7 @@ private:
                           return false;
                         }
 
-                        storage->building.selection_radius = 0.5f;
+                        storage->building.selection_radius = 1.7f;
 
                         return true;
                       })) {
@@ -434,13 +462,14 @@ private:
 
   nu::ScopedRefPtr<Context> context_;
 
-  le::Camera world_camera_{fl::degrees(45.0f), {0.0f, 0.0f, 1.0f}};
+  le::Camera world_camera_{fl::degrees(70.0f), {0.0f, 0.0f, 1.0f}};
   le::TopDownCameraController world_camera_controller_{
-      &world_camera_, {fl::Vec3::forward, 0.0f}, 25.0f};
+      &world_camera_, {fl::Vec3::forward, 0.0f}, 45.0f};
+
+  le::RenderModel* cursor_model_ = nullptr;
+  fl::Vec3 mouse_position_in_world_ = fl::Vec3::zero;
 
   fl::Pos current_mouse_position_ = {0, 0};
-
-  fl::Ray ray_{{0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}};
 };
 
 }  // namespace ad

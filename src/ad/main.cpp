@@ -10,7 +10,7 @@ NU_MAIN_HEADER {
   nu::Profiling profiling;
   le::Engine engine;
 
-  auto context = nu::make_scoped_ref_ptr<ad::Context>();
+  auto context = nu::make_scoped_ref_ptr<ad::Context>(&engine.resource_manager());
 
   engine.add_layer<ad::WorldLayer>(context);
   engine.add_layer<ad::UILayer>(context);

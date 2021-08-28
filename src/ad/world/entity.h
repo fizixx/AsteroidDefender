@@ -1,21 +1,13 @@
 #pragma once
 
-#include <nucleus/Memory/scoped_ptr.h>
+#include <nucleus/memory/scoped_ptr.h>
 
 #include "floats/common.h"
 #include "floats/vec2.h"
-#include "legion/Resources/render_model.h"
+#include "legion/resources/render_model.h"
 #include "nucleus/hash.h"
 
-const MemSize k_invalid_entity_id = std::numeric_limits<MemSize>::max();
-
-struct EntityId {
-  MemSize id = k_invalid_entity_id;
-
-  NU_NO_DISCARD bool is_valid() const {
-    return id != k_invalid_entity_id;
-  }
-};
+DECLARE_RESOURCE_ID(Entity);
 
 enum class EntityType : U32 {
   Unknown = 0,
@@ -53,6 +45,7 @@ struct Entity {
   } movement;
 
   struct Building {
+    EntityId linked_to_id;
     F32 selection_radius = 0.0f;
   } building;
 
