@@ -396,7 +396,9 @@ private:
   static bool setup_prefabs(Prefabs* prefabs) {
     if (!prefabs->set(EntityType::CommandCenter,
                       [](le::ResourceManager* resource_manager, Entity* storage) -> bool {
-                        storage->electricity.electricity_delta = 20;
+                        storage->flags = ENTITY_FLAG_LINKABLE;
+
+                        storage->electricity.electricity_delta = 100;
                         storage->building.selection_radius = 2.5f;
 
                         auto* model = resource_manager->get_render_model("command_center.obj");
@@ -413,11 +415,12 @@ private:
 
     if (!prefabs->set(EntityType::Miner,
                       [](le::ResourceManager* resource_manager, Entity* storage) -> bool {
+                        storage->flags = ENTITY_FLAG_NEEDS_LINK;
+
                         storage->electricity.electricity_delta = -5;
 
                         storage->building.selection_radius = 1.5f;
 
-                        storage->mining.time_since_last_cycle = 0.0f;
                         storage->mining.cycle_duration = 100.0f;
                         storage->mining.mineral_amount_per_cycle = 10;
 
@@ -431,8 +434,46 @@ private:
       return false;
     }
 
+    if (!prefabs->set(EntityType::Turret,
+                      [](le::ResourceManager* resource_manager, Entity* storage) -> bool {
+                        storage->flags = ENTITY_FLAG_NEEDS_LINK;
+
+                        storage->electricity.electricity_delta = -5;
+
+                        storage->building.selection_radius = 1.5f;
+
+                        storage->render.model = resource_manager->get_render_model("turret.obj");
+                        if (!storage->render.model) {
+                          return false;
+                        }
+
+                        return true;
+                      })) {
+      return false;
+    }
+
+    if (!prefabs->set(EntityType::Hub,
+                      [](le::ResourceManager* resource_manager, Entity* storage) -> bool {
+                        storage->flags = ENTITY_FLAG_NEEDS_LINK | ENTITY_FLAG_LINKABLE;
+
+                        storage->electricity.electricity_delta = -1;
+
+                        storage->building.selection_radius = 1.5f;
+
+                        storage->render.model = resource_manager->get_render_model("hub.obj");
+                        if (!storage->render.model) {
+                          return false;
+                        }
+
+                        return true;
+                      })) {
+      return false;
+    }
+
     if (!prefabs->set(EntityType::Asteroid,
                       [](le::ResourceManager* resource_manager, Entity* storage) -> bool {
+                        storage->flags = ENTITY_FLAG_MINABLE;
+
                         storage->render.model = resource_manager->get_render_model("asteroid.obj");
                         if (!storage->render.model) {
                           return false;

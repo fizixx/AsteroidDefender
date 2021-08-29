@@ -59,10 +59,10 @@ bool populate_world(World* world, Prefabs* prefabs) {
 
   // Asteroids
 
-#if 0
+#if 1
   for (U32 i = 0; i < 10; ++i) {
     fl::Angle theta = fl::degrees((F32)(fl::randomInt() % 360));
-    F32 distance = (F32)(fl::randomInt() % 100);
+    F32 distance = 30.0f + static_cast<F32>(fl::randomInt() % 10);
     create_asteroid(fl::Vec2{fl::cosine(theta) * distance, fl::sine(theta) * distance});
   }
 #endif  // 0

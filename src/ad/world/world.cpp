@@ -15,6 +15,11 @@ bool World::initialize(le::ResourceManager* resource_manager) {
     return false;
   }
 
+  miner_laser_model_ = resource_manager->get_render_model("miner_laser.obj");
+  if (!miner_laser_model_) {
+    return false;
+  }
+
   return true;
 }
 
@@ -33,8 +38,15 @@ EntityId World::add_entity_from_prefab(Entity* prefab, const fl::Vec2& position)
   }
 
   entity.position = position;
-  if (entity.type != EntityType::CommandCenter) {
-    entity.building.linked_to_id = find_closest_to(entity_id);
+
+  // If this entity requires a link, then find a suitable link.
+  if (entity.has_flags(ENTITY_FLAG_NEEDS_LINK)) {
+    entity.building.linked_to_id = find_closest_to(entity_id, ENTITY_FLAG_LINKABLE);
+  }
+
+  if (entity.type == EntityType::Miner) {
+    // Select an asteroid target for the miner.
+    entity.target = find_closest_to(entity_id, ENTITY_FLAG_MINABLE);
   }
 
   return entity_id;
@@ -66,7 +78,7 @@ EntityId World::get_entity_under_cursor() const {
   return EntityId{};
 }
 
-EntityId World::find_closest_to(EntityId id) const {
+EntityId World::find_closest_to(EntityId id, U32 mask) const {
   DCHECK(id.is_valid());
   const auto& from = entities_[id.id];
 
@@ -80,7 +92,7 @@ EntityId World::find_closest_to(EntityId id) const {
     const auto& e = entities_[i];
 
     F32 distance = fl::distance(from.position, e.position);
-    if (distance < closest_distance) {
+    if (distance < closest_distance && e.has_flags(mask)) {
       closest_distance = distance;
       closest = EntityId{i};
     }
@@ -89,7 +101,7 @@ EntityId World::find_closest_to(EntityId id) const {
   return closest;
 }
 
-EntityId World::find_closest_to(const fl::Vec2& position) const {
+EntityId World::find_closest_to(const fl::Vec2& position, U32 mask) const {
   EntityId closest;
   auto closest_distance = std::numeric_limits<F32>::max();
 
@@ -97,7 +109,7 @@ EntityId World::find_closest_to(const fl::Vec2& position) const {
     const auto& e = entities_[i];
 
     F32 distance = fl::distance(position, e.position);
-    if (distance < closest_distance) {
+    if (distance < closest_distance && e.has_flags(mask)) {
       closest_distance = distance;
       closest = EntityId{i};
     }
@@ -154,10 +166,21 @@ void World::render(ca::Renderer* renderer, le::Camera* camera,
     le::renderModel(renderer, *entity.render.model, mvp);
 
     // Draw the entity's link.
-    if (entity.building.linked_to_id.is_valid()) {
-      auto& linked_to = entities_[entity.building.linked_to_id.id];
+    {
+      if (entity.building.linked_to_id.is_valid()) {
+        auto& linked_to = entities_[entity.building.linked_to_id.id];
 
-      render_link(renderer, projection_and_view, entity.position, linked_to.position);
+        render_stretched_obj(renderer, projection_and_view, entity.position, linked_to.position,
+                             link_model_);
+      }
+    }
+
+    // Draw a miner's laser.
+    if (entity.type == EntityType::Miner && entity.target.is_valid() &&
+        entity.mining.time_since_last_cycle < entity.mining.cycle_duration * 0.75f) {
+      const auto& target = entities_[entity.target.id];
+      render_stretched_obj(renderer, projection_and_view, entity.position, target.position,
+                           miner_laser_model_);
     }
   }
 
@@ -171,16 +194,31 @@ void World::render(ca::Renderer* renderer, le::Camera* camera,
 
     le::renderModel(renderer, *prefab->render.model, mvp);
 
-    // Render a link to the closest entity.
-    auto closest_id = find_closest_to(cursor_position_);
-    if (closest_id.is_valid()) {
-      const auto& closest = entities_[closest_id.id];
-      render_link(renderer, projection_and_view, cursor_position_, closest.position);
+    {
+      // Render a link to the closest entity.
+      auto closest_id = find_closest_to(cursor_position_, ENTITY_FLAG_LINKABLE);
+      if (closest_id.is_valid()) {
+        const auto& closest = entities_[closest_id.id];
+        render_stretched_obj(renderer, projection_and_view, cursor_position_, closest.position,
+                             link_model_);
+      }
+    }
+
+    // If we are rendering a miner, then find a target and render a mining laser.
+    if (prefab->type == EntityType::Miner) {
+      // Render a link to the closest entity.
+      auto closest_id = find_closest_to(cursor_position_, ENTITY_FLAG_MINABLE);
+      if (closest_id.is_valid()) {
+        const auto& closest = entities_[closest_id.id];
+        render_stretched_obj(renderer, projection_and_view, cursor_position_, closest.position,
+                             miner_laser_model_);
+      }
     }
   }
 
   immediate.submit_to_renderer();
 }
+
 void World::update_selected_entity() {
   for (unsigned i = 0; i < entities_.size(); ++i) {
     const auto& entity = entities_[i];
@@ -199,8 +237,9 @@ void World::update_selected_entity() {
   selected_entity_id_ = EntityId{};
 }
 
-void World::render_link(ca::Renderer* renderer, const fl::Mat4& projection_and_view,
-                        const fl::Vec2& from, const fl::Vec2& to) const {
+void World::render_stretched_obj(ca::Renderer* renderer, const fl::Mat4& projection_and_view,
+                                 const fl::Vec2& from, const fl::Vec2& to,
+                                 le::RenderModel* render_model) const {
   auto distance_to_linked = fl::distance(from, to);
   auto angle = fl::arcTangent2(to.x - from.x, to.y - from.y);
 
@@ -209,5 +248,5 @@ void World::render_link(ca::Renderer* renderer, const fl::Mat4& projection_and_v
   model = model * fl::rotation_matrix(fl::Vec3::forward, fl::Angle::fromRadians(angle));
   model = model * fl::scale_matrix({1.0f, distance_to_linked, 1.0f});
 
-  le::renderModel(renderer, *link_model_, projection_and_view * model);
+  le::renderModel(renderer, *render_model, projection_and_view * model);
 }

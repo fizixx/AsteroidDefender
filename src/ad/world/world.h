@@ -36,8 +36,8 @@ public:
   void set_cursor_position(const fl::Vec2& position);
   NU_NO_DISCARD EntityId get_entity_under_cursor() const;
 
-  NU_NO_DISCARD EntityId find_closest_to(EntityId entity) const;
-  NU_NO_DISCARD EntityId find_closest_to(const fl::Vec2& position) const;
+  NU_NO_DISCARD EntityId find_closest_to(EntityId entity, U32 mask = 0) const;
+  NU_NO_DISCARD EntityId find_closest_to(const fl::Vec2& position, U32 mask = 0) const;
 
   NU_NO_DISCARD EntityId selected_entity_id() const {
     return selected_entity_id_;
@@ -50,8 +50,9 @@ public:
 private:
   void update_selected_entity();
 
-  void render_link(ca::Renderer* renderer, const fl::Mat4& projection_and_view,
-                   const fl::Vec2& from, const fl::Vec2& to) const;
+  void render_stretched_obj(ca::Renderer* renderer, const fl::Mat4& projection_and_view,
+                            const fl::Vec2& from, const fl::Vec2& to,
+                            le::RenderModel* render_model) const;
 
   fl::Vec2 cursor_position_ = fl::Vec2::zero;
 
@@ -64,5 +65,6 @@ private:
   ResourceSystem resource_system_{&resources_};
 
   le::RenderModel* link_model_ = nullptr;
+  le::RenderModel* miner_laser_model_ = nullptr;
   EntityId command_center_id_;
 };
