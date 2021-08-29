@@ -2,9 +2,6 @@
 
 #include "canvas/utils/immediate_shapes.h"
 #include "construction_controller.h"
-#include "floats/transform.h"
-#include "legion/rendering/rendering.h"
-#include "legion/resources/resource_manager.h"
 #include "nucleus/profiling.h"
 
 World::World() = default;
@@ -32,6 +29,8 @@ EntityId World::add_entity_from_prefab(Entity* prefab, const fl::Vec2& position)
 
   auto& entity = result.element();
   auto entity_id = EntityId{result.index()};
+
+  entity.id = entity_id;
 
   if (entity.type == EntityType::CommandCenter) {
     command_center_id_ = entity_id;
@@ -76,46 +75,6 @@ EntityId World::get_entity_under_cursor() const {
   }
 
   return EntityId{};
-}
-
-EntityId World::find_closest_to(EntityId id, U32 mask) const {
-  DCHECK(id.is_valid());
-  const auto& from = entities_[id.id];
-
-  EntityId closest;
-  auto closest_distance = std::numeric_limits<F32>::max();
-  for (unsigned i = 0; i < entities_.size(); ++i) {
-    if (i == id.id) {
-      continue;
-    }
-
-    const auto& e = entities_[i];
-
-    F32 distance = fl::distance(from.position, e.position);
-    if (distance < closest_distance && e.has_flags(mask)) {
-      closest_distance = distance;
-      closest = EntityId{i};
-    }
-  }
-
-  return closest;
-}
-
-EntityId World::find_closest_to(const fl::Vec2& position, U32 mask) const {
-  EntityId closest;
-  auto closest_distance = std::numeric_limits<F32>::max();
-
-  for (unsigned i = 0; i < entities_.size(); ++i) {
-    const auto& e = entities_[i];
-
-    F32 distance = fl::distance(position, e.position);
-    if (distance < closest_distance && e.has_flags(mask)) {
-      closest_distance = distance;
-      closest = EntityId{i};
-    }
-  }
-
-  return closest;
 }
 
 void World::tick(F32 delta) {
@@ -249,4 +208,23 @@ void World::render_stretched_obj(ca::Renderer* renderer, const fl::Mat4& project
   model = model * fl::scale_matrix({1.0f, distance_to_linked, 1.0f});
 
   le::renderModel(renderer, *render_model, projection_and_view * model);
+}
+
+EntityId World::find_closest_to(EntityId miner_id, U32 mask) {
+  DCHECK(miner_id.is_valid());
+  auto& miner = entities_[miner_id.id];
+
+  auto not_including_self = excluding_id(all(), miner_id);
+  for (auto& element : not_including_self) {
+    LOG(Info) << "not self: " << element.id.id;
+  }
+  auto is_minable = matching_mask(not_including_self, mask);
+
+  return closest(is_minable, miner.position);
+}
+
+EntityId World::find_closest_to(const fl::Vec2& position, U32 mask) {
+  auto is_minable = matching_mask(all(), mask);
+
+  return closest(is_minable, position);
 }

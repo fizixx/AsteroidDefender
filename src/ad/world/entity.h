@@ -42,6 +42,7 @@ struct nu::Hash<EntityType> {
 };
 
 struct Entity {
+  EntityId id;
   EntityType type = EntityType::Unknown;
   fl::Vec2 position = fl::Vec2::zero;
   U32 flags = 0;

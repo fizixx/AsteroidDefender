@@ -18,6 +18,133 @@ class ResourceManager;
 
 class ConstructionController;
 
+namespace detail {
+
+template <typename T>
+struct FilteredStorageType {
+  using Type = T;
+};
+
+template <>
+struct FilteredStorageType<EntityList> {
+  using Type = EntityList&;
+};
+
+}  // namespace detail
+
+template <typename S, typename Predicate>
+class Filtered {
+public:
+  using Source = typename detail::FilteredStorageType<S>::Type;
+
+  class Iterator {
+  public:
+    using SourceIterator = typename std::remove_reference_t<Source>::Iterator;
+
+    Iterator(SourceIterator begin, SourceIterator end, Predicate predicate)
+      : begin_{begin}, end_{end}, predicate_{predicate} {}
+
+    Iterator& operator=(const Iterator& other) {
+      begin_ = other.begin_;
+      end_ = other.end_;
+      predicate_ = other.predicate_;
+      return *this;
+    }
+
+    bool operator==(const Iterator& other) const {
+      return begin_ == other.begin_;
+    }
+
+    bool operator!=(const Iterator& other) const {
+      return begin_ != other.begin_;
+    }
+
+    Iterator& operator++() {
+      begin_ = std::find_if(++begin_, end_, predicate_);
+      return *this;
+    }
+
+    Iterator operator++(int) {
+      return Iterator{std::find_if(begin_++, end_, predicate_)};
+    }
+
+    Entity& operator*() {
+      return *begin_;
+    }
+
+  private:
+    SourceIterator begin_;
+    SourceIterator end_;
+    Predicate predicate_;
+  };
+
+  Filtered(Source source, Predicate predicate) : source_{source}, predicate_{predicate} {}
+
+  Iterator begin() {
+    auto end = source_.end();
+    return Iterator{std::find_if(source_.begin(), end, predicate_), end, predicate_};
+    // return Iterator{source_.begin(), source_.end(), predicate_};
+  }
+
+  Iterator end() {
+    auto end = source_.end();
+    return Iterator{end, end, predicate_};
+  }
+
+private:
+  Source source_;
+  Predicate predicate_;
+};
+
+template <typename Source, typename Predicate>
+auto filter(Source source, Predicate predicate) {
+  return Filtered<Source, Predicate>{source, predicate};
+}
+
+template <typename Source>
+auto matching_mask(Source source, U32 mask) {
+  return filter(source, [mask](Entity& entity) { return entity.has_flags(mask); });
+}
+
+template <typename Source>
+auto excluding_id(Source source, EntityId id) {
+  struct Op {
+    EntityId id;
+
+    bool operator()(Entity& entity) {
+      return entity.id != id;
+    }
+
+    explicit Op(EntityId id) : id{id} {}
+  };
+
+  return filter(source, Op{id});
+}
+
+template <typename Source>
+auto within_radius(Source source, const fl::Vec2 center, F32 radius) {
+  return filter(source, [center, radius](Entity& entity) {
+    F32 distance_to_entity = fl::distance(center, entity.position);
+    return distance_to_entity <= radius;
+  });
+}
+
+template <typename Source>
+EntityId closest(Source source, const fl::Vec2& position) {
+  F32 closest_distance = std::numeric_limits<F32>::max();
+  EntityId closest_id;
+
+  for (auto& entity : source) {
+    auto distance_to_entity = fl::distance(position, entity.position);
+    if (distance_to_entity <= closest_distance) {
+      closest_distance = distance_to_entity;
+      closest_id = entity.id;
+    }
+  }
+
+  return closest_id;
+}
+
 class World {
   NU_DELETE_COPY_AND_MOVE(World);
 
@@ -28,6 +155,10 @@ public:
     return &resources_;
   }
 
+  EntityList& entities() {
+    return entities_;
+  }
+
   bool initialize(le::ResourceManager* resource_manager);
 
   void clear();
@@ -36,8 +167,9 @@ public:
   void set_cursor_position(const fl::Vec2& position);
   NU_NO_DISCARD EntityId get_entity_under_cursor() const;
 
-  NU_NO_DISCARD EntityId find_closest_to(EntityId entity, U32 mask = 0) const;
-  NU_NO_DISCARD EntityId find_closest_to(const fl::Vec2& position, U32 mask = 0) const;
+  auto all() {
+    return Filtered<EntityList&, bool (*)(Entity&)>{entities_, [](Entity&) { return true; }};
+  }
 
   NU_NO_DISCARD EntityId selected_entity_id() const {
     return selected_entity_id_;
@@ -53,6 +185,9 @@ private:
   void render_stretched_obj(ca::Renderer* renderer, const fl::Mat4& projection_and_view,
                             const fl::Vec2& from, const fl::Vec2& to,
                             le::RenderModel* render_model) const;
+
+  EntityId find_closest_to(EntityId miner_id, U32 mask);
+  EntityId find_closest_to(const fl::Vec2& position, U32 mask);
 
   fl::Vec2 cursor_position_ = fl::Vec2::zero;
 

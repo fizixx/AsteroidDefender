@@ -15,8 +15,9 @@ target_include_directories(ad PUBLIC src)
 target_link_libraries(ad PUBLIC legion)
 
 set(TESTS_FILES
-    tests/ad/world/prefabs_tests.cpp
     tests/ad/world/entity_tests.cpp
+    tests/ad/world/prefabs_tests.cpp
+    tests/ad/world/world_tests.cpp
     )
 
 nucleus_add_executable(ad_tests ${TESTS_FILES})
