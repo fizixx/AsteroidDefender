@@ -103,7 +103,13 @@ auto filter(Source source, Predicate predicate) {
 
 template <typename Source>
 auto matching_mask(Source source, U32 mask) {
-  return filter(source, [mask](Entity& entity) { return entity.has_flags(mask); });
+  struct Op {
+    U32 mask;
+    bool operator()(Entity& entity) {
+      return entity.has_flags(mask);
+    }
+  };
+  return filter(source, Op{mask});
 }
 
 template <typename Source>
@@ -186,8 +192,11 @@ private:
                             const fl::Vec2& from, const fl::Vec2& to,
                             le::RenderModel* render_model) const;
 
-  EntityId find_closest_to(EntityId miner_id, U32 mask);
+  EntityId find_closest_to(EntityId entity_id, U32 mask);
   EntityId find_closest_to(const fl::Vec2& position, U32 mask);
+
+  EntityId find_miner_target(EntityId miner_id);
+  EntityId find_miner_target(const fl::Vec2& position);
 
   fl::Vec2 cursor_position_ = fl::Vec2::zero;
 

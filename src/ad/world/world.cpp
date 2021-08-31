@@ -45,7 +45,7 @@ EntityId World::add_entity_from_prefab(Entity* prefab, const fl::Vec2& position)
 
   if (entity.type == EntityType::Miner) {
     // Select an asteroid target for the miner.
-    entity.target = find_closest_to(entity_id, ENTITY_FLAG_MINABLE);
+    entity.target = find_miner_target(entity_id);
   }
 
   return entity_id;
@@ -166,7 +166,7 @@ void World::render(ca::Renderer* renderer, le::Camera* camera,
     // If we are rendering a miner, then find a target and render a mining laser.
     if (prefab->type == EntityType::Miner) {
       // Render a link to the closest entity.
-      auto closest_id = find_closest_to(cursor_position_, ENTITY_FLAG_MINABLE);
+      auto closest_id = find_miner_target(cursor_position_);
       if (closest_id.is_valid()) {
         const auto& closest = entities_[closest_id.id];
         render_stretched_obj(renderer, projection_and_view, cursor_position_, closest.position,
@@ -210,14 +210,11 @@ void World::render_stretched_obj(ca::Renderer* renderer, const fl::Mat4& project
   le::renderModel(renderer, *render_model, projection_and_view * model);
 }
 
-EntityId World::find_closest_to(EntityId miner_id, U32 mask) {
-  DCHECK(miner_id.is_valid());
-  auto& miner = entities_[miner_id.id];
+EntityId World::find_closest_to(EntityId entity_id, U32 mask) {
+  DCHECK(entity_id.is_valid());
+  auto& miner = entities_[entity_id.id];
 
-  auto not_including_self = excluding_id(all(), miner_id);
-  for (auto& element : not_including_self) {
-    LOG(Info) << "not self: " << element.id.id;
-  }
+  auto not_including_self = excluding_id(all(), entity_id);
   auto is_minable = matching_mask(not_including_self, mask);
 
   return closest(is_minable, miner.position);
@@ -227,4 +224,22 @@ EntityId World::find_closest_to(const fl::Vec2& position, U32 mask) {
   auto is_minable = matching_mask(all(), mask);
 
   return closest(is_minable, position);
+}
+
+EntityId World::find_miner_target(EntityId miner_id) {
+  DCHECK(miner_id.is_valid());
+  auto& miner = entities_[miner_id.id];
+
+  auto not_including_self = excluding_id(all(), miner_id);
+  auto is_minable = matching_mask(not_including_self, (U32)ENTITY_FLAG_MINABLE);
+  auto in_range = within_radius(is_minable, miner.position, 10.0f);
+
+  return closest(in_range, miner.position);
+}
+
+EntityId World::find_miner_target(const fl::Vec2& position) {
+  auto is_minable = matching_mask(all(), (U32)ENTITY_FLAG_MINABLE);
+  auto in_range = within_radius(is_minable, position, 10.0f);
+
+  return closest(in_range, position);
 }
