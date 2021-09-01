@@ -1,22 +1,29 @@
 #pragma once
 
+#include <floats/transform.h>
+#include <legion/rendering/rendering.h>
+#include <legion/world/camera.h>
+
 #include "ad/world/entity.h"
 #include "ad/world/prefabs.h"
 #include "ad/world/world.h"
-#include "floats/transform.h"
-#include "legion/rendering/rendering.h"
-#include "legion/world/camera.h"
+
+namespace ad {
 
 class ConstructionController {
 public:
   explicit ConstructionController(World* world, Prefabs* prefabs)
     : world_{world}, prefabs_{prefabs} {}
 
-  auto start_building(EntityType entity_type) -> void {
+  void start_building(EntityType entity_type) {
     prefab_ = prefabs_->get(entity_type);
   }
 
-  NU_NO_DISCARD auto is_building() const -> bool {
+  void cancel_building() {
+    prefab_ = nullptr;
+  }
+
+  NU_NO_DISCARD bool is_building() const {
     return prefab_ != nullptr;
   }
 
@@ -34,7 +41,7 @@ public:
     prefab_ = nullptr;
   }
 
-  const fl::Vec2& cursor_position() const {
+  NU_NO_DISCARD const fl::Vec2& cursor_position() const {
     return cursor_position_;
   }
 
@@ -49,3 +56,5 @@ private:
   fl::Vec2 cursor_position_ = fl::Vec2::zero;
   Entity* prefab_ = nullptr;
 };
+
+}  // namespace ad

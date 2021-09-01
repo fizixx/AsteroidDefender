@@ -1,15 +1,17 @@
-#ifndef AD_APP_USER_INTERFACE_H_
-#define AD_APP_USER_INTERFACE_H_
+#pragma once
 
-#include "ad/World/construction_controller.h"
-#include "ad/World/entity.h"
-#include "elastic/Renderer/font.h"
-#include "elastic/context.h"
-#include "nucleus/macros.h"
+#include <elastic/context.h>
+#include <elastic/renderer/font.h>
+#include <nucleus/macros.h>
+
+#include "ad/world/construction_controller.h"
+#include "ad/world/entity.h"
 
 namespace el {
 class LabelView;
 }
+
+namespace ad {
 
 class World;
 
@@ -43,4 +45,4 @@ private:
   ConstructionController* construction_controller_;
 };
 
-#endif  // AD_APP_USER_INTERFACE_H_
+}  // namespace ad

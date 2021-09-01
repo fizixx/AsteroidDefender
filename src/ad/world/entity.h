@@ -28,11 +28,13 @@ enum class EntityType : U32 {
   Count,
 };
 
-constexpr U32 ENTITY_FLAG_NEEDS_LINK = NU_BIT(1);
-constexpr U32 ENTITY_FLAG_LINKABLE = NU_BIT(2);
-constexpr U32 ENTITY_FLAG_MINABLE = NU_BIT(3);
-constexpr U32 ENTITY_FLAG_ENEMY = NU_BIT(4);
-constexpr U32 ENTITY_FLAG_ALL = std::numeric_limits<U32>::max();
+using EntityFlags = U32;
+
+constexpr EntityFlags ENTITY_FLAG_NEEDS_LINK = NU_BIT(1);
+constexpr EntityFlags ENTITY_FLAG_LINKABLE = NU_BIT(2);
+constexpr EntityFlags ENTITY_FLAG_MINABLE = NU_BIT(3);
+constexpr EntityFlags ENTITY_FLAG_ENEMY = NU_BIT(4);
+constexpr EntityFlags ENTITY_FLAG_ALL = std::numeric_limits<U32>::max();
 
 template <>
 struct nu::Hash<EntityType> {
@@ -45,7 +47,7 @@ struct Entity {
   EntityId id;
   EntityType type = EntityType::Unknown;
   fl::Vec2 position = fl::Vec2::zero;
-  U32 flags = 0;
+  EntityFlags flags = 0;
 
   EntityId target;
 
@@ -75,9 +77,7 @@ struct Entity {
     le::RenderModel* model = nullptr;
   } render;
 
-  NU_NO_DISCARD bool has_flags(U32 mask) const {
+  NU_NO_DISCARD bool has_flags(EntityFlags mask) const {
     return NU_BIT_IS_SET(flags, mask);
   }
 };
-
-using EntityList = nu::DynamicArray<Entity>;

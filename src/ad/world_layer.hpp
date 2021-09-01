@@ -353,6 +353,24 @@ protected:
   }
 
   void on_key_released(const ca::KeyEvent& evt) override {
+    switch (evt.key) {
+      case ca::Key::M:
+        context_->construction_controller().start_building(EntityType::Miner);
+        break;
+
+      case ca::Key::T:
+        context_->construction_controller().start_building(EntityType::Turret);
+        break;
+
+      case ca::Key::H:
+        context_->construction_controller().start_building(EntityType::Hub);
+        break;
+
+      case ca::Key::Escape:
+        context_->construction_controller().cancel_building();
+        break;
+    }
+
     world_camera_controller_.on_key_released(evt);
   }
 

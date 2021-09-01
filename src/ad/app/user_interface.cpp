@@ -1,17 +1,14 @@
-#include "ad/App/user_interface.h"
+#include "ad/app/user_interface.h"
 
+#include <elastic/views/button_view.h>
+#include <elastic/views/label_view.h>
+#include <elastic/views/linear_sizer_view.h>
+#include <nucleus/streams/file_input_stream.h>
 #include <silhouette/codec/image/png.h>
-#include <silhouette/image.h>
 
 #include <cstdio>
 
-#include "ad/World/construction_controller.h"
-#include "ad/World/world.h"
-#include "elastic/Views/button_view.h"
-#include "elastic/Views/label_view.h"
-#include "elastic/Views/linear_sizer_view.h"
-#include "nucleus/Streams/file_input_stream.h"
-#include "nucleus/file_path.h"
+namespace ad {
 
 namespace {
 
@@ -127,3 +124,5 @@ auto UserInterface::add_build_button(el::GroupView* container, EntityType entity
   button->background(button_background_);
   container->addChild(button);
 }
+
+}  // namespace ad

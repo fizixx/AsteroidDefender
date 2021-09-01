@@ -2,6 +2,8 @@
 
 #include <floats/random.h>
 
+namespace ad {
+
 bool populate_world(World* world, Prefabs* prefabs) {
   Entity* command_center = prefabs->get(EntityType::CommandCenter);
   if (!command_center) {
@@ -79,3 +81,5 @@ bool populate_world(World* world, Prefabs* prefabs) {
 
   return true;
 }
+
+}  // namespace ad

@@ -1,10 +1,10 @@
-#ifndef AD_WORLD_SYSTEMS_RESOURCE_SYSTEM_H_
-#define AD_WORLD_SYSTEMS_RESOURCE_SYSTEM_H_
+#pragma once
 
-#include <ad/World/entity.h>
+#include "ad/world/entity.h"
+#include "ad/world/entity_list.hpp"
+#include "ad/world/resources.h"
 
-#include "ad/World/entity.h"
-#include "ad/World/resources.h"
+namespace ad {
 
 struct ResourceSystem {
   Resources* resources;
@@ -35,4 +35,4 @@ struct ResourceSystem {
   }
 };
 
-#endif  // AD_WORLD_SYSTEMS_RESOURCE_SYSTEM_H_
+}  //

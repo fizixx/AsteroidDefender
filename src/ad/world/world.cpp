@@ -1,8 +1,11 @@
 #include "ad/world/world.h"
 
-#include "canvas/utils/immediate_shapes.h"
-#include "construction_controller.h"
-#include "nucleus/profiling.h"
+#include <canvas/utils/immediate_shapes.h>
+#include <nucleus/profiling.h>
+
+#include "ad/world/construction_controller.h"
+
+namespace ad {
 
 World::World() = default;
 
@@ -155,7 +158,11 @@ void World::render(ca::Renderer* renderer, le::Camera* camera,
 
     {
       // Render a link to the closest entity.
-      auto closest_id = find_closest_to(cursor_position_, ENTITY_FLAG_LINKABLE);
+      auto linkable = entities_ | std::views::filter([](const Entity& entity) {
+                        return entity.has_flags(ENTITY_FLAG_LINKABLE);
+                      });
+      auto closest_id = closest(linkable, cursor_position_);
+
       if (closest_id.is_valid()) {
         const auto& closest = entities_[closest_id.id];
         render_stretched_obj(renderer, projection_and_view, cursor_position_, closest.position,
@@ -214,14 +221,12 @@ EntityId World::find_closest_to(EntityId entity_id, U32 mask) {
   DCHECK(entity_id.is_valid());
   auto& miner = entities_[entity_id.id];
 
-  auto not_including_self = excluding_id(all(), entity_id);
-  auto is_minable = matching_mask(not_including_self, mask);
-
-  return closest(is_minable, miner.position);
+  auto all = entities_ | excluding_id(entity_id) | matching_mask(mask);
+  return closest(all, miner.position);
 }
 
 EntityId World::find_closest_to(const fl::Vec2& position, U32 mask) {
-  auto is_minable = matching_mask(all(), mask);
+  auto is_minable = entities_ | matching_mask(mask);
 
   return closest(is_minable, position);
 }
@@ -230,16 +235,14 @@ EntityId World::find_miner_target(EntityId miner_id) {
   DCHECK(miner_id.is_valid());
   auto& miner = entities_[miner_id.id];
 
-  auto not_including_self = excluding_id(all(), miner_id);
-  auto is_minable = matching_mask(not_including_self, (U32)ENTITY_FLAG_MINABLE);
-  auto in_range = within_radius(is_minable, miner.position, 10.0f);
-
-  return closest(in_range, miner.position);
+  return closest(entities_ | excluding_id(miner_id) | matching_mask(ENTITY_FLAG_MINABLE) |
+                     within_radius(miner.position, 10.0f),
+                 miner.position);
 }
 
 EntityId World::find_miner_target(const fl::Vec2& position) {
-  auto is_minable = matching_mask(all(), (U32)ENTITY_FLAG_MINABLE);
-  auto in_range = within_radius(is_minable, position, 10.0f);
-
-  return closest(in_range, position);
+  return closest(entities_ | matching_mask(ENTITY_FLAG_MINABLE) | within_radius(position, 10.0f),
+                 position);
 }
+
+}  // namespace ad

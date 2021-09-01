@@ -1,7 +1,8 @@
-#ifndef AD_WORLD_SYSTEMS_MOVEMENT_SYSTEM_H_
-#define AD_WORLD_SYSTEMS_MOVEMENT_SYSTEM_H_
+#pragma once
 
-#include "ad/World/entity.h"
+#include "ad/world/entity_list.hpp"
+
+namespace ad {
 
 struct MovementSystem {
   auto tick(EntityList& entities, F32 delta) -> void {
@@ -22,4 +23,4 @@ struct MovementSystem {
   }
 };
 
-#endif  // AD_WORLD_SYSTEMS_MOVEMENT_SYSTEM_H_
+}  // namespace ad
