@@ -335,10 +335,14 @@ protected:
   }
 
   void on_mouse_released(const ca::MouseEvent& evt) override {
-    if (evt.button == ca::MouseEvent::Button::Left &&
-        context_->construction_controller().is_building()) {
-      context_->construction_controller().build();
-      return;
+    if (context_->construction_controller().is_building()) {
+      if (evt.button == ca::MouseEvent::Button::Left) {
+        context_->construction_controller().build();
+        return;
+      } else if (evt.button == ca::MouseEvent::Button::Right) {
+        context_->construction_controller().cancel_building();
+        // Don't return here, because the right mouse button is also used by the camera controller.
+      }
     }
 
     world_camera_controller_.on_mouse_released(evt);
@@ -356,19 +360,19 @@ protected:
     switch (evt.key) {
       case ca::Key::M:
         context_->construction_controller().start_building(EntityType::Miner);
-        break;
+        return;
 
       case ca::Key::T:
         context_->construction_controller().start_building(EntityType::Turret);
-        break;
+        return;
 
       case ca::Key::H:
         context_->construction_controller().start_building(EntityType::Hub);
-        break;
+        return;
 
       case ca::Key::Escape:
         context_->construction_controller().cancel_building();
-        break;
+        return;
     }
 
     world_camera_controller_.on_key_released(evt);
